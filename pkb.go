@@ -7,10 +7,27 @@ import (
     "os"
     "bufio"
     "strings"
+    "github.com/nsf/termbox-go"
+    "log"
 )
 
+type phon struct {
+    cmu string  // from cmupd
+    klat string // klattese
+    ipa string // IPA
+    mbrola string // for mbrola 
+    espeak string     // for espeak
+    ispeak string     // for apple speak
+    des string     // deseret alphabet
+}
+
+/*
+
+
+*/
 var verbose = flag.Bool("v", false, "verbose?")
 var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
+var interactive = flag.Bool("i", false, "interactive mode")
 
 type iphodrecord struct {
     nphones int
@@ -40,9 +57,92 @@ func readiphod() {
     }
 }
 
+type keys struct {
+    termbox_event chan termbox.Event
+}
+
+func interact() {
+	logfile, err := os.Create("log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(logfile)
+
+    k := new(keys)
+	if err = termbox.Init(); err != nil {
+		log.Fatal(err)
+	} else {
+		log.Println("termbox.Init()")
+	}
+	defer termbox.Close()
+	termbox.SetInputMode(termbox.InputAlt)
+    k.mainloop()
+}
+
+
+func (k *keys) handle_event(ev *termbox.Event) bool {
+    switch ev.Type {
+        case termbox.EventKey:
+            switch ev.Key {
+            case termbox.KeyCtrlQ:
+                return false
+            default:
+                log.Printf("%#v\n", ev) 
+            }
+    }
+    return true 
+}
+
+
+func (k *keys) draw() {
+    return 
+}
+
+func (m *keys) mainloop() {
+	m.termbox_event = make(chan termbox.Event, 20)
+	go func() {
+		for {
+			m.termbox_event <- termbox.PollEvent()
+		}
+	}()
+	for {
+		select {
+		case ev := <-m.termbox_event:
+			ok := m.handle_event(&ev)
+			if !ok {
+				return
+			}
+			m.consume_more_events()
+			m.draw()
+			termbox.Flush()
+		}
+	}
+}
+
+func (m *keys) consume_more_events() {
+loop:
+	for {
+		select {
+		case ev := <-m.termbox_event:
+			ok := m.handle_event(&ev)
+			if !ok {
+				break loop
+			}
+		default:
+			break loop
+		}
+	}
+}
+
+
+
 func main() {
     flag.Parse()
     readiphod()
+    if *interactive {
+        interact()
+        return
+    } 
     total := 0
     utotal := 0
     ucount := 0
