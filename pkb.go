@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-    "github.com/hagna/pkb/rawkb"
+	"github.com/hagna/pkb/rawkb"
 	"log"
 	"os"
 	"strconv"
@@ -21,10 +21,6 @@ type phon struct {
 	des    string // deseret alphabet
 }
 
-/*
-
-
-*/
 var verbose = flag.Bool("v", false, "verbose?")
 var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
 var interactive = flag.Bool("i", false, "interactive mode")
@@ -63,13 +59,12 @@ func interact() {
 		log.Fatal(err)
 	}
 	log.SetOutput(logfile)
-    if rawkb.SetupKeyboard() == 0 {
-        log.Println("must be on the console for raw keyboard access")
-        return
-    }
-    rawkb.RestoreKeyboard()
+	if rawkb.SetupKeyboard() == 0 {
+		log.Println("must be on the console for raw keyboard access")
+		return
+	}
+	rawkb.RestoreKeyboard()
 }
-
 
 /*
 type keys struct {

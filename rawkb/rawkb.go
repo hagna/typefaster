@@ -8,10 +8,10 @@ package rawkb
 import "C"
 
 func SetupKeyboard() int {
-    i := C.setupKeyboard()
-    return int(i)
+	i := C.setupKeyboard()
+	return int(i)
 }
 
 func RestoreKeyboard() {
-    C.restoreKeyboard()
+	C.restoreKeyboard()
 }
