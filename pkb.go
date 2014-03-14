@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/hagna/pkb/rawkb"
+	"github.com/hagna/typefaster/rawkb"
 	"log"
 	"os"
 	"strconv"
