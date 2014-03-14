@@ -1,0 +1,3 @@
+
+void restoreKeyboard();
+int setupKeyboard();

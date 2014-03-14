@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/nsf/termbox-go"
+    "github.com/hagna/pkb/rawkb"
 	"log"
 	"os"
 	"strconv"
@@ -57,26 +57,19 @@ func readiphod() {
 	}
 }
 
-type keys struct {
-	termbox_event chan termbox.Event
-}
-
 func interact() {
 	logfile, err := os.Create("log")
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.SetOutput(logfile)
+    log.Println(rawkb.Random())
+}
 
-	k := new(keys)
-	if err = termbox.Init(); err != nil {
-		log.Fatal(err)
-	} else {
-		log.Println("termbox.Init()")
-	}
-	defer termbox.Close()
-	termbox.SetInputMode(termbox.InputAlt)
-	k.mainloop()
+
+/*
+type keys struct {
+	termbox_event chan termbox.Event
 }
 
 func (k *keys) handle_event(ev *termbox.Event) bool {
@@ -131,6 +124,7 @@ loop:
 		}
 	}
 }
+*/
 
 func main() {
 	flag.Parse()
