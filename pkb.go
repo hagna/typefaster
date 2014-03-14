@@ -63,7 +63,11 @@ func interact() {
 		log.Fatal(err)
 	}
 	log.SetOutput(logfile)
-    log.Println(rawkb.Random())
+    if rawkb.SetupKeyboard() == 0 {
+        log.Println("must be on the console for raw keyboard access")
+        return
+    }
+    rawkb.RestoreKeyboard()
 }
 
 
