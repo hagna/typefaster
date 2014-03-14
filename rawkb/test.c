@@ -40,6 +40,16 @@ void restoreKeyboard()
     ioctl(0, KDSKBMODE, old_keyboard_mode);
 }
 
+char readOnce()
+{
+    char buf[1];
+    int res;
+
+    /* read scan code from stdin */
+    res = read(0, &buf[0], 1);
+    return buf[0];
+}
+
 void readKeyboard()
 {
     char buf[1];
