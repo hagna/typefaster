@@ -2,6 +2,7 @@ package rawkb
 
 /*
 #include <stdlib.h>
+#include <unistd.h>
 #include "test.h"
 #cgo CFLAGS:-Wno-error
 */
@@ -17,8 +18,8 @@ func RestoreKeyboard() {
 	C.restoreKeyboard()
 }
 
-func ReadOnce() uint8 {
-	var ch C.char = 23
-	i := C.read(0, (*C.char)ch, 1)
-	return uint8(i)	
+func ReadOnce() (uint16, uint8) {
+	var a uint16
+	i := C.read(0, unsafe.Pointer(&a), 1)
+	return a, uint8(i)
 }

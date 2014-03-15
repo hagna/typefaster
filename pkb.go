@@ -54,23 +54,30 @@ func readiphod() {
 }
 
 func interact() {
-/*	logfile, err := os.Create("log")
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.SetOutput(logfile)
-*/
+	/*	logfile, err := os.Create("log")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.SetOutput(logfile)
+
+	*/
 	if rawkb.SetupKeyboard() == 0 {
 		log.Println("must be on the console for raw keyboard access")
 		return
+	} else {
+		defer rawkb.RestoreKeyboard()
 	}
-	fmt.Println(rawkb.ReadOnce())
 
 	for {
-		b := rawkb.ReadOnce()
-		fmt.Println(b)
+		b, ok := rawkb.ReadOnce()
+		if ok != 255 {
+			log.Println("%x %x", b, ok)
+			if b == 1 {
+				break
+			}
+		}
 	}
-	rawkb.RestoreKeyboard()
+
 }
 
 /*
