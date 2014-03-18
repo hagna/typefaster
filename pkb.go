@@ -56,10 +56,15 @@ func readiphod() error {
 	return nil
 }
 
+type Pad struct {
+	keys map[uint16]uint8
+}
+
 type Mcs struct {
 	keys map[uint16]uint8
 	states map[string]func (k uint16) string
 	kbevents chan uint16
+	pads [2]Pad
 }
 
 func (m *Mcs) state_log(k uint16) string {
@@ -90,7 +95,6 @@ func NewMcs() *Mcs {
 }
 
 func interact() {
-	log.Println("interact")
 	/*	logfile, err := os.Create("log")
 		if err != nil {
 			log.Fatal(err)
@@ -208,7 +212,6 @@ func main() {
 		return
 	}
 */
-	log.Println("interact?", *interactive)
 	if *interactive {
 		interact()
 		return
