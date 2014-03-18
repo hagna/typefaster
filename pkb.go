@@ -33,11 +33,12 @@ type iphodrecord struct {
 
 var IPHOD map[string]iphodrecord
 
-func readiphod() {
+func readiphod() error {
 	IPHOD = make(map[string]iphodrecord)
 	fh, err := os.Open(*iphod)
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 	defer fh.Close()
 	scanner := bufio.NewScanner(fh)
@@ -52,14 +53,44 @@ func readiphod() {
 		phonemes := l[2]
 		IPHOD[v] = iphodrecord{nphones, phonemes}
 	}
+	return nil
 }
 
 type Mcs struct {
 	keys map[uint16]uint8
+	states map[string]func (k uint16) string
+	kbevents chan uint16
 }
 
+func (m *Mcs) state_log(k uint16) string {
+	log.Println("loggy", k)
+	return "loggy"
+}
+
+func (mcs *Mcs) state_learn(k uint16) string {
+	log.Println("learn", k)
+	b := k
+	for i:=0; i<12; i++ {
+		mcs.keys[b] = uint8(i)
+		b = <- mcs.kbevents
+		mcs.keys[b] = uint8(i)
+	}
+	log.Println(mcs.keys)
+	return "loggy"
+}
+
+func NewMcs() *Mcs {
+	m := new(Mcs)
+	m.states = make(map[string]func (k uint16) string)
+	m.keys = make(map[uint16]uint8, 12)
+	m.kbevents = make(chan uint16, 2)
+	m.states["loggy"] = m.state_log
+	m.states["init"] = m.state_learn
+	return m
+}
 
 func interact() {
+	log.Println("interact")
 	/*	logfile, err := os.Create("log")
 		if err != nil {
 			log.Fatal(err)
@@ -71,49 +102,31 @@ func interact() {
 		log.Println("must be on the console for raw keyboard access")
 		return
 	} else {
+		log.Println("setting up rawkb")
 		defer rawkb.RestoreKeyboard()
 	}
-	kbevents := make(chan uint16, 2)
+	mcs := NewMcs()
+	log.Println(mcs)
+	log.Println(mcs.kbevents)
 	go func() {
 		for {
 			b, ok := rawkb.ReadOnce()
 			if ok != 255 {
-//				log.Println("0got keypress named", b)
-				kbevents <- b
+				mcs.kbevents <- b
 
 			}
 			time.Sleep(1 * time.Microsecond)
 		}
 	}()
-	states := make(map[string]func (k uint16) string)
-	loggy := func(k uint16) string {
-		log.Println("loggy", k)
-		return "loggy"
-	}
-	mcs := Mcs{make(map[uint16]uint8, 12)}
-	learn := func(k uint16) string {
-		mcs = Mcs{make(map[uint16]uint8, 12)}
-		log.Println("learn", k)
-		b := k
-		for i:=0; i<12; i++ {
-			mcs.keys[b] = uint8(i)
-			b = <- kbevents
-			mcs.keys[b] = uint8(i)
-		}
-		log.Println(mcs.keys)
-		return "loggy"
-	}
 
-	m := learn
-	log.Println("initialize the keys by entering each one in order")
-	states["loggy"] = loggy
-	states["learn"] = learn
+	m := mcs.states["init"]
+
 inf:
 	for {
 		select  {
-		case b := <- kbevents: 
+		case b := <- mcs.kbevents: 
 			next_state := m(b)
-			next_method, ok := states[next_state]	
+			next_method, ok := mcs.states[next_state]	
 			if !ok {
 				log.Println("no such state", next_state)
 			} else {	
@@ -189,11 +202,18 @@ loop:
 
 func main() {
 	flag.Parse()
+/*
+	if err := readiphod(); err != nil {
+		log.Println("problem reading iphod")
+		return
+	}
+*/
+	log.Println("interact?", *interactive)
 	if *interactive {
 		interact()
 		return
 	}
-	readiphod()
+	
 	total := 0
 	utotal := 0
 	ucount := 0
