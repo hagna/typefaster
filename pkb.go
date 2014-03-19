@@ -57,40 +57,90 @@ func readiphod() error {
 }
 
 type Pad struct {
-	keys map[uint16]uint8
+	id          string
+	boardstate  uint8
+	keyspressed uint8
+}
+
+func (p *Pad) sendphone() {
+	log.Println("sendphone: ", p.keyspressed)
+}
+
+func (p *Pad) keyup(keyno uint8) {
+	b := p.boardstate
+	b = b & ^(1 << keyno)
+	p.boardstate = b
+	if b == 0 {
+		p.sendphone()
+		p.keyspressed = 0
+	}
+}
+
+func (p *Pad) keydown(keyno uint8) {
+	log.Println(p.id, keyno)
+	b := p.boardstate
+	b = b | (1 << keyno)
+	p.boardstate = b
+	p.keyspressed = p.keyspressed | (1 << keyno)
 }
 
 type Mcs struct {
-	keys map[uint16]uint8
-	states map[string]func (k uint16) string
+	keys     map[uint16]uint8
+	watched  map[uint16]func()
+	states   map[string]func(k uint16) string
 	kbevents chan uint16
-	pads [2]Pad
+	pad      [2]Pad
 }
 
 func (m *Mcs) state_log(k uint16) string {
-	log.Println("loggy", k)
+	if callable, ok := m.watched[k]; ok {
+		callable()
+	}
 	return "loggy"
 }
 
-func (mcs *Mcs) state_learn(k uint16) string {
-	log.Println("learn", k)
-	b := k
-	for i:=0; i<12; i++ {
-		mcs.keys[b] = uint8(i)
-		b = <- mcs.kbevents
-		mcs.keys[b] = uint8(i)
+func iskeyup(k uint16) bool {
+	if k > 0x80 {
+		return true
 	}
-	log.Println(mcs.keys)
+	return false
+}
+
+func (mcs *Mcs) state_learn(k uint16) string {
+	b := k
+	log.Println("learning the keys starting with", k)
+	for iskeyup(b) {
+		log.Println("learn: discarding keyup", b)
+		b = <-mcs.kbevents
+	}
+	for j := 0; j < 2; j++ {
+		var p Pad = mcs.pad[j]
+		for i := 0; i < 6; i++ {
+			var j int = i
+			mcs.watched[b] = func() {
+				p.keydown(uint8(j))
+			}
+			b = <-mcs.kbevents
+			mcs.watched[b] = func() {
+				p.keyup(uint8(j))
+			}
+			log.Println("learned key", i)
+			b = <-mcs.kbevents
+		}
+	}
 	return "loggy"
 }
 
 func NewMcs() *Mcs {
 	m := new(Mcs)
-	m.states = make(map[string]func (k uint16) string)
+	m.states = make(map[string]func(k uint16) string)
 	m.keys = make(map[uint16]uint8, 12)
 	m.kbevents = make(chan uint16, 2)
+	m.watched = make(map[uint16]func())
 	m.states["loggy"] = m.state_log
 	m.states["init"] = m.state_learn
+	m.pad = [2]Pad{{"left", 0, 0}, {"right", 0, 0}}
+	log.Println(m.pad)
 	return m
 }
 
@@ -113,6 +163,7 @@ func interact() {
 	log.Println(mcs)
 	log.Println(mcs.kbevents)
 	go func() {
+		mcs.kbevents <- 0x81
 		for {
 			b, ok := rawkb.ReadOnce()
 			if ok != 255 {
@@ -124,24 +175,22 @@ func interact() {
 	}()
 
 	m := mcs.states["init"]
-
 inf:
 	for {
-		select  {
-		case b := <- mcs.kbevents: 
+		select {
+		case b := <-mcs.kbevents:
 			next_state := m(b)
-			next_method, ok := mcs.states[next_state]	
+			next_method, ok := mcs.states[next_state]
 			if !ok {
 				log.Println("no such state", next_state)
-			} else {	
-				m = next_method	
+			} else {
+				m = next_method
 			}
 			if b == 1 {
 				break inf
 			}
 		}
 	}
-	
 
 }
 
@@ -206,17 +255,17 @@ loop:
 
 func main() {
 	flag.Parse()
-/*
-	if err := readiphod(); err != nil {
-		log.Println("problem reading iphod")
-		return
-	}
-*/
+	/*
+		if err := readiphod(); err != nil {
+			log.Println("problem reading iphod")
+			return
+		}
+	*/
 	if *interactive {
 		interact()
 		return
 	}
-	
+
 	total := 0
 	utotal := 0
 	ucount := 0
