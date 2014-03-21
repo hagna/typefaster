@@ -12,6 +12,25 @@ import (
 	"time"
 )
 
+const (
+    N = 1 << 4
+    T = 1 << 3
+    R = 1 << 1
+    S = 1 << 2
+    D = 1 << 5
+    L = 1 << 1 | 1 << 4
+    DH = 1 << 2 | 1 << 3
+    Z = 1 << 3 | 1 << 4
+    M = 1 << 1 | 1 << 2
+    K = 1 << 2 | 1 << 3 | 1 << 4
+    V = 1 << 1 | 1 << 3
+    W = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4
+    P = 1 << 1 | 1 << 2 | 1 << 3
+    F = 1 << 1 | 1 << 5
+
+
+)
+
 type phon struct {
 	cmu    string // from cmupd
 	klat   string // klattese
@@ -62,8 +81,59 @@ type Pad struct {
 	keyspressed uint8
 }
 
+
+var Phones = map[uint8]phon{
+    N: phon{cmu: "N"},
+    AA
+    AE
+    AH
+    AO
+    AW
+    AY
+    B
+    CH
+    D
+    DH
+    EH
+    ER
+    EY
+    F
+    G
+    HH
+    IH
+    IY
+    JH
+    K
+    L
+    M
+    N
+    NG
+    OW
+    OY
+    P
+    R
+    S
+    SH
+    T
+    TH
+    UH
+    UW
+    V
+    W
+    Y
+    Z
+    ZH
+}
+
+func decode(a uint8) string {
+    if res, ok := Phones[a]; ok {
+        return res.cmu
+    }
+    return fmt.Sprintf("%x", a)
+}
+
 func (p *Pad) sendphone() {
-	log.Println("sendphone: ", p.keyspressed)
+	log.Println("sendphone: ", decode(p.keyspressed))
 }
 
 func (p *Pad) keyup(keyno uint8) {
