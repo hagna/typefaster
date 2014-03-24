@@ -40,7 +40,7 @@ const (
     ZH = 1 << 1 | 1 << 3 | 1 << 4 | 1 << 5
     
     // vowels
-    AH = 1 
+    AA = 1 
     IH2 = 1 | 1 << 4  // maybe get rid of this one? dennis?
     AO = 1 | 1 << 2
     IH = 1 | 1 << 1
@@ -60,7 +60,7 @@ const (
     
 )
 
-type phon struct {
+type phone struct {
 	cmu    string // from cmupd
 	klat   string // klattese
 	ipa    string // IPA
@@ -111,47 +111,46 @@ type Pad struct {
 }
 
 
-var Phones = map[uint8]phon{
-    N: phon{cmu: "N"},
-    AA
-    AE
-    AH
-    AO
-    AW
-    AY
-    B
-    CH
-    D
-    DH
-    EH
-    ER
-    EY
-    F
-    G
-    HH
-    IH
-    IY
-    JH
-    K
-    L
-    M
-    N
-    NG
-    OW
-    OY
-    P
-    R
-    S
-    SH
-    T
-    TH
-    UH
-    UW
-    V
-    W
-    Y
-    Z
-    ZH
+var Phones = map[uint8]phone{
+    AA: phone{cmu: "AA"},
+    AE: phone{cmu: "AE"},
+    AH: phone{cmu: "AH"},
+    AO: phone{cmu: "AO"},
+    AW: phone{cmu: "AW"},
+    AY: phone{cmu: "AY"},
+    B: phone{cmu: "B"},
+    CH: phone{cmu: "CH"},
+    D: phone{cmu: "D"},
+    DH: phone{cmu: "DH"},
+    EH: phone{cmu: "EH"},
+    ER: phone{cmu: "ER"},
+    EY: phone{cmu: "EY"},
+    F: phone{cmu: "F"},
+    G: phone{cmu: "G"},
+    HH: phone{cmu: "HH"},
+    IH: phone{cmu: "IH"},
+    IY: phone{cmu: "IY"},
+    JH: phone{cmu: "JH"},
+    K: phone{cmu: "K"},
+    L: phone{cmu: "L"},
+    M: phone{cmu: "M"},
+    N: phone{cmu: "N"},
+    NG: phone{cmu: "NG"},
+    OW: phone{cmu: "OW"},
+    OY: phone{cmu: "OY"},
+    P: phone{cmu: "P"},
+    R: phone{cmu: "R"},
+    S: phone{cmu: "S"},
+    SH: phone{cmu: "SH"},
+    T: phone{cmu: "T"},
+    TH: phone{cmu: "TH"},
+    UH: phone{cmu: "UH"},
+    UW: phone{cmu: "UW"},
+    V: phone{cmu: "V"},
+    W: phone{cmu: "W"},
+    Y: phone{cmu: "Y"},
+    Z: phone{cmu: "Z"},
+    ZH: phone{cmu: "ZH"},
 }
 
 func decode(a uint8) string {
