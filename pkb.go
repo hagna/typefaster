@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hagna/typefaster/rawkb"
+	"github.com/davecheney/gpio"
+	"github.com/davecheney/gpio/rpi"
 	"log"
 	"os"
 	"strconv"
@@ -72,7 +74,8 @@ type phone struct {
 
 var verbose = flag.Bool("v", false, "verbose?")
 var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
-var interactive = flag.Bool("i", false, "interactive mode")
+var rawkbmode = flag.Bool("kb", false, "rawkbmode mode")
+var pimode = flag.Bool("pi", false, "use gpio pins on raspberry pi")
 
 type iphodrecord struct {
 	nphones  int
@@ -242,6 +245,41 @@ func NewMcs() *Mcs {
 	return m
 }
 
+
+func mkcallback(i int) func() {
+	var j int = i
+	return func() {
+		log.Println(i, j)
+	}
+}
+
+func pimode_interact() {
+	for _, pn := range []int{rpi.GPIO25} {
+		log.Println("hello pimode", pn, gpio.EdgeBoth)
+		pin, err := rpi.OpenPin(pn, gpio.ModeInput)
+		if err != nil {
+			log.Println("couldn't open pin", err)
+			return
+		}
+		defer pin.Close()
+		pin.Set()
+		log.Println(pin)
+		err = pin.BeginWatch(gpio.EdgeBoth, mkcallback(pn))
+		if err != nil {
+			log.Println("could not begin watch for", pin, err)
+			return
+		}
+		defer pin.EndWatch()
+		}
+	select {
+		case <-time.After(1 * time.Minute):
+			break
+	}
+
+
+
+}
+
 func interact() {
 	/*	logfile, err := os.Create("log")
 		if err != nil {
@@ -353,14 +391,18 @@ loop:
 
 func main() {
 	flag.Parse()
-	/*
+	if *iphod != "" {
 		if err := readiphod(); err != nil {
 			log.Println("problem reading iphod")
 			return
 		}
-	*/
-	if *interactive {
+	}
+	if *rawkbmode {
 		interact()
+		return
+	}
+	if *pimode {
+		pimode_interact()
 		return
 	}
 
