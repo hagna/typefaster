@@ -3,14 +3,14 @@ package main
 import (
 	"github.com/davecheney/gpio"
 	"github.com/davecheney/gpio/rpi"
-	"time"
 	"log"
+	"time"
 )
 
 type button struct {
 	gpio.Pin
-	num int		
-	c *time.Timer
+	num        int
+	c          *time.Timer
 	edgeChange chan bool
 }
 
@@ -30,14 +30,14 @@ func (b button) Close() {
 	log.Println("Close:", b)
 	b.Pin.Close()
 	b.Pin.EndWatch()
-}	
+}
 
 func NewButton(n int) (*button, error) {
 	pin, err := rpi.OpenPin(n, gpio.ModeInput)
 	if err != nil {
 		return nil, err
 	}
-	res := button{Pin:pin, num:n, c:time.NewTimer(1 * time.Second), edgeChange:make(chan bool)}
+	res := button{Pin: pin, num: n, c: time.NewTimer(1 * time.Second), edgeChange: make(chan bool)}
 	err = pin.BeginWatch(gpio.EdgeBoth, res.cb)
 	if err != nil {
 		pin.Close()
@@ -48,7 +48,7 @@ func NewButton(n int) (*button, error) {
 		keydown := false
 		for {
 			select {
-			case ec := <- res.edgeChange:
+			case ec := <-res.edgeChange:
 				if keydown == true && ec == true {
 					keydown = false
 					res.Keyup()
@@ -65,4 +65,3 @@ func NewButton(n int) (*button, error) {
 	}()
 	return &res, nil
 }
-
