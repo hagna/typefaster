@@ -244,7 +244,7 @@ func NewMcs() *Mcs {
 }
 
 func pimode_interact() {
-	for _, pn := range []int{rpi.GPIO25, rpi.GPIO24} {
+	for _, pn := range []int{rpi.GPIO23-5, rpi.GPIO23, rpi.GPIO17, rpi.GPIO25, rpi.GPIO24} {
 		log.Println("hello pimode", pn, gpio.EdgeBoth)
 		pin, err := NewButton(pn)
 		if err != nil {
@@ -255,7 +255,7 @@ func pimode_interact() {
 
 	}
 	select {
-	case <-time.After(10 * time.Second):
+	case <-time.After(60 * time.Second):
 		break
 	}
 }
