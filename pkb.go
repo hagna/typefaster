@@ -246,38 +246,21 @@ func NewMcs() *Mcs {
 }
 
 
-func mkcallback(i int) func() {
-	var j int = i
-	return func() {
-		log.Println(i, j)
-	}
-}
-
 func pimode_interact() {
-	for _, pn := range []int{rpi.GPIO25} {
+	for _, pn := range []int{rpi.GPIO25, rpi.GPIO24} {
 		log.Println("hello pimode", pn, gpio.EdgeBoth)
-		pin, err := rpi.OpenPin(pn, gpio.ModeInput)
+		pin, err := NewButton(pn)
 		if err != nil {
 			log.Println("couldn't open pin", err)
 			return
 		}
 		defer pin.Close()
-		pin.Set()
-		log.Println(pin)
-		err = pin.BeginWatch(gpio.EdgeBoth, mkcallback(pn))
-		if err != nil {
-			log.Println("could not begin watch for", pin, err)
-			return
-		}
-		defer pin.EndWatch()
-		}
+		
+	}
 	select {
-		case <-time.After(1 * time.Minute):
+		case <-time.After(10 * time.Second):
 			break
 	}
-
-
-
 }
 
 func interact() {
