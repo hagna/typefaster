@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+//TODO: 17 chasis 25 clock 24 serial
 const (
 	// consonants
 	N  = 1 << 4
