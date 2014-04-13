@@ -14,7 +14,6 @@ import (
 	"time"
 )
 
-//TODO: 17 chasis 25 clock 24 serial
 const (
 	// consonants
 	N  = 1 << 4
@@ -244,7 +243,49 @@ func NewMcs() *Mcs {
 	return m
 }
 
+func pi_shiftreg_interact() {
+	//TODO: 17 chasis 25 clock 24 serial
+	ser, err := gpio.OpenPin(rpi.GPIO24, gpio.ModeOutput)
+	if err != nil {
+		log.Fatal("Error opening pin", err)
+	}
+	defer ser.Close()
+	clk, err := gpio.OpenPin(rpi.GPIO25, gpio.ModeOutput)
+	if err != nil {
+		log.Fatal("Error opening pin", err)
+	}
+	defer clk.Close()
+	pin, err := gpio.OpenPin(rpi.GPIO23, gpio.ModeInput)
+	if err != nil {
+		log.Fatal("Error opening pin", err)
+	}
+	defer pin.Close()
+	pin.BeginWatch(gpio.EdgeRising, func() {
+		log.Println("chassis Rising")
+	})
+	defer pin.EndWatch()
+
+	log.Println("serial", ser.Get())
+	log.Println("pin", pin.Get())
+	ser.Set()
+	clk.Set()
+	clk.Clear()
+	ser.Clear()
+	log.Println("serial", ser.Get())
+	//ser.Clear()
+	for i := 0; i < 6400; i++ {
+		ser.Set()
+		clk.Set()
+		clk.Clear()
+		ser.Clear()
+		time.Sleep(1* time.Millisecond)
+	}
+	
+}
+
 func pimode_interact() {
+
+
 	for _, pn := range []int{rpi.GPIO23-5, rpi.GPIO23, rpi.GPIO17, rpi.GPIO25, rpi.GPIO24} {
 		log.Println("hello pimode", pn, gpio.EdgeBoth)
 		pin, err := NewButton(pn)
@@ -383,7 +424,7 @@ func main() {
 		return
 	}
 	if *pimode {
-		pimode_interact()
+		pi_shiftreg_interact()
 		return
 	}
 
