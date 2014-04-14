@@ -94,6 +94,7 @@ func NewSrpi() *Srpi {
 	}()
 
 	for {
+		srpi.curpin = 0
 		log.Println("Set serial high to feed a bit to shift register")
 		srpi.serial.Set()
 		srpi.cycle_clock()
