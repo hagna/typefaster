@@ -243,44 +243,11 @@ func NewMcs() *Mcs {
 	return m
 }
 
-func pi_shiftreg_interact() {
-	//TODO: 17 chasis 25 clock 24 serial
-	ser, err := gpio.OpenPin(rpi.GPIO24, gpio.ModeOutput)
-	if err != nil {
-		log.Fatal("Error opening pin", err)
-	}
-	defer ser.Close()
-	clk, err := gpio.OpenPin(rpi.GPIO25, gpio.ModeOutput)
-	if err != nil {
-		log.Fatal("Error opening pin", err)
-	}
-	defer clk.Close()
-	pin, err := gpio.OpenPin(rpi.GPIO23, gpio.ModeInput)
-	if err != nil {
-		log.Fatal("Error opening pin", err)
-	}
-	defer pin.Close()
-	pin.BeginWatch(gpio.EdgeRising, func() {
-		log.Println("chassis Rising")
-	})
-	defer pin.EndWatch()
-
-	log.Println("serial", ser.Get())
-	log.Println("pin", pin.Get())
-	ser.Set()
-	clk.Set()
-	clk.Clear()
-	ser.Clear()
-	log.Println("serial", ser.Get())
-	//ser.Clear()
-	for i := 0; i < 6400; i++ {
-		ser.Set()
-		clk.Set()
-		clk.Clear()
-		ser.Clear()
-		time.Sleep(1* time.Millisecond)
-	}
 	
+
+func pi_shiftreg_interact() {
+	NewSrpi()
+
 }
 
 func pimode_interact() {
