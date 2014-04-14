@@ -243,8 +243,6 @@ func NewMcs() *Mcs {
 	return m
 }
 
-	
-
 func pi_shiftreg_interact() {
 	NewSrpi()
 
@@ -252,8 +250,7 @@ func pi_shiftreg_interact() {
 
 func pimode_interact() {
 
-
-	for _, pn := range []int{rpi.GPIO23-5, rpi.GPIO23, rpi.GPIO17, rpi.GPIO25, rpi.GPIO24} {
+	for _, pn := range []int{rpi.GPIO23 - 5, rpi.GPIO23, rpi.GPIO17, rpi.GPIO25, rpi.GPIO24} {
 		log.Println("hello pimode", pn, gpio.EdgeBoth)
 		pin, err := NewButton(pn)
 		if err != nil {

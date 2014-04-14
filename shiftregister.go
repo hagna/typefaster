@@ -3,18 +3,18 @@ package main
 import (
 	"github.com/davecheney/gpio"
 	"github.com/davecheney/gpio/rpi"
-	"time"
 	"log"
-	"os/signal"
 	"os"
+	"os/signal"
+	"time"
 )
 
 type Srpi struct {
 	chassis gpio.Pin
-	serial gpio.Pin
-	clock gpio.Pin
-	curpin int
-	npins int
+	serial  gpio.Pin
+	clock   gpio.Pin
+	curpin  int
+	npins   int
 }
 
 /*
@@ -52,8 +52,8 @@ func (s *Srpi) Close() {
 	s.chassis.Close()
 }
 
-/* 
-   The callback called when chassis gets a signal, 
+/*
+   The callback called when chassis gets a signal,
    used for detecting which key.
 */
 func (s *Srpi) chassis_cb() {
@@ -80,7 +80,7 @@ func NewSrpi() *Srpi {
 	srpi.chassis = pin
 	srpi.curpin = 0
 	srpi.npins = 8
-	srpi.clearit()	
+	srpi.clearit()
 
 	srpi.chassis.BeginWatch(gpio.EdgeRising, srpi.chassis_cb)
 	// turn the led off on exit
@@ -93,7 +93,6 @@ func NewSrpi() *Srpi {
 		}
 	}()
 
-
 	for {
 		log.Println("Set serial high to feed a bit to shift register")
 		srpi.serial.Set()
@@ -102,11 +101,11 @@ func NewSrpi() *Srpi {
 		log.Println("clock", srpi.curpin)
 		for i := 0; i < srpi.npins-1; i++ {
 			srpi.cycle_clock()
-			time.Sleep(1* time.Second)
-			srpi.curpin = i+1
+			time.Sleep(1 * time.Second)
+			srpi.curpin = i + 1
 			log.Println("clock", srpi.curpin)
 		}
 	}
 	return srpi
-	
+
 }
