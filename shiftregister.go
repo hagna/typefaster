@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	"sync"
 )
 
 type Srpi struct {
@@ -15,6 +16,7 @@ type Srpi struct {
 	clock   gpio.Pin
 	curpin  int
 	npins   int
+	sync.RWMutex
 }
 
 /*
@@ -57,7 +59,9 @@ func (s *Srpi) Close() {
    used for detecting which key.
 */
 func (s *Srpi) chassis_cb() {
+	s.RLock()
 	log.Println("button pressed", s.curpin)
+	s.RUnlock()
 }
 
 func NewSrpi() *Srpi {
@@ -94,17 +98,23 @@ func NewSrpi() *Srpi {
 	}()
 
 	for {
-		srpi.curpin = 0
 		log.Println("Set serial high to feed a bit to shift register")
+		srpi.Lock()
+		srpi.curpin = 0
 		srpi.serial.Set()
 		srpi.cycle_clock()
 		srpi.serial.Clear()
+		srpi.cycle_clock()
+		srpi.Unlock()
 		log.Println("clock", srpi.curpin)
+		time.Sleep(1 * time.Second)
 		for i := 0; i < srpi.npins-1; i++ {
+			srpi.Lock()
 			srpi.cycle_clock()
-			time.Sleep(1 * time.Second)
 			srpi.curpin = i + 1
 			log.Println("clock", srpi.curpin)
+			srpi.Unlock()
+			time.Sleep(1 * time.Second)
 		}
 	}
 	return srpi
