@@ -11,46 +11,58 @@ import (
 )
 
 type Srpi struct {
+	shld gpio.Pin
+	clkinh  gpio.Pin
+	clk   gpio.Pin
 	chassis gpio.Pin
-	serial  gpio.Pin
-	clock   gpio.Pin
 	curpin  int
 	npins   int
 	sync.RWMutex
 }
 
 /*
-   cycles clock high then low with
-   the right pulse width and setup time
-   according to datasheet for SN74HC595
+	cycle the clock
 */
-func (s *Srpi) cycle_clock() {
-	// setup time T_su
-	time.Sleep(125 * time.Nanosecond)
-	s.clock.Set()
-	// pulse time T_w
+func (s *Srpi) clock() {
+	s.clk.Set()
 	time.Sleep(120 * time.Nanosecond)
-	s.clock.Clear()
+	s.clk.Clear()
+	time.Sleep(150 * time.Nanosecond)
 }
 
 /*
-   Clear the shift register(s)
+	shift 
 */
-func (s *Srpi) clearit() {
-	s.serial.Clear()
-	for i := 0; i < s.npins; i++ {
-		s.cycle_clock()
-	}
+func (s *Srpi) Shift() {
+	time.Sleep(100 * time.Nanosecond)
+	s.shld.Set()
+	time.Sleep(120 * time.Nanosecond)
+	s.clkinh.Clear()
+	time.Sleep(120 * time.Nanosecond)
+	s.clock()
 }
+
+
+/*
+	Load
+*/
+func (s *Srpi) Load() {
+	time.Sleep(120 * time.Nanosecond)
+	s.clkinh.Set()
+	time.Sleep(120 * time.Nanosecond)
+	s.shld.Clear()
+	time.Sleep(120 * time.Nanosecond)
+	s.clock()
+}
+
 
 /*
    Close everything and clear the shift register(s)
 */
 func (s *Srpi) Close() {
-	s.clearit()
-	s.serial.Close()
-	s.clock.Close()
-	s.chassis.EndWatch()
+	s.clkinh.Close()
+	s.clk.Close()
+	s.shld.Close()
 	s.chassis.Close()
 }
 
@@ -65,6 +77,10 @@ func (s *Srpi) chassis_cb() {
 }
 
 func NewSrpi() *Srpi {
+	chassis, err := gpio.OpenPin(rpi.GPIO22, gpio.ModeInput)
+	if err != nil {
+		log.Fatal("Error opening pin", err)
+	}
 	ser, err := gpio.OpenPin(rpi.GPIO24, gpio.ModeOutput)
 	if err != nil {
 		log.Fatal("Error opening pin", err)
@@ -73,21 +89,16 @@ func NewSrpi() *Srpi {
 	if err != nil {
 		log.Fatal("Error opening pin", err)
 	}
-	pin, err := gpio.OpenPin(rpi.GPIO23, gpio.ModeInput)
+	pin, err := gpio.OpenPin(rpi.GPIO23, gpio.ModeOutput)
 	if err != nil {
 		log.Fatal("Error opening pin", err)
 	}
 
 	srpi := new(Srpi)
-	srpi.serial = ser
-	srpi.clock = clk
-	srpi.chassis = pin
-	srpi.curpin = 0
-	srpi.npins = 8
-	srpi.clearit()
-
-	srpi.chassis.BeginWatch(gpio.EdgeRising, srpi.chassis_cb)
-	// turn the led off on exit
+	srpi.clkinh = ser
+	srpi.clk = pin
+	srpi.shld = clk
+	srpi.chassis = chassis
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -97,26 +108,18 @@ func NewSrpi() *Srpi {
 		}
 	}()
 
-	for {
-		log.Println("Set serial high to feed a bit to shift register")
-		srpi.Lock()
-		srpi.curpin = 0
-		srpi.serial.Set()
-		srpi.cycle_clock()
-		srpi.serial.Clear()
-		srpi.cycle_clock()
-		srpi.Unlock()
-		log.Println("clock", srpi.curpin)
+	for j := 0; j < 5; j++ {
+	log.Println("press some keys")
+	srpi.Load()
+	time.Sleep(3 * time.Second)
+	log.Println("Now we shift")
+	for i := 0; i < 8; i++ {
+		srpi.Shift()
+		log.Println("shift", i)
 		time.Sleep(1 * time.Second)
-		for i := 0; i < srpi.npins-1; i++ {
-			srpi.Lock()
-			srpi.cycle_clock()
-			srpi.curpin = i + 1
-			log.Println("clock", srpi.curpin)
-			srpi.Unlock()
-			time.Sleep(1 * time.Second)
-		}
 	}
+	}
+	srpi.Close()
 	return srpi
 
 }
