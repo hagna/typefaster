@@ -3,35 +3,39 @@ package main
 import (
 	"github.com/davecheney/gpio"
 	"github.com/davecheney/gpio/rpi"
+	rpi2 "github.com/davecheney/rpi"
 	"log"
 	"os"
 	"os/signal"
-	"time"
 	"sync"
+	"time"
 )
 
 type Srpi struct {
-	shld gpio.Pin
+	shld    gpio.Pin
 	clkinh  gpio.Pin
-	clk   gpio.Pin
+	clk     gpio.Pin
 	chassis gpio.Pin
 	curpin  int
 	npins   int
+	M       chan func()
 	sync.RWMutex
 }
 
 /*
-	cycle the clock
+	cycle the clock return value of chassis after rising edge
 */
-func (s *Srpi) clock() {
+func (s *Srpi) clock() (res bool) {
 	s.clk.Set()
 	time.Sleep(120 * time.Nanosecond)
+	res = rpi2.GPIOGet(rpi.GPIO22) // TODO use gofix to make const
 	s.clk.Clear()
 	time.Sleep(150 * time.Nanosecond)
+	return res
 }
 
 /*
-	shift 
+	shift
 */
 func (s *Srpi) Shift() {
 	time.Sleep(100 * time.Nanosecond)
@@ -39,22 +43,16 @@ func (s *Srpi) Shift() {
 	time.Sleep(120 * time.Nanosecond)
 	s.clkinh.Clear()
 	time.Sleep(120 * time.Nanosecond)
-	s.clock()
 }
-
 
 /*
 	Load
 */
 func (s *Srpi) Load() {
-	time.Sleep(120 * time.Nanosecond)
-	s.clkinh.Set()
-	time.Sleep(120 * time.Nanosecond)
 	s.shld.Clear()
 	time.Sleep(120 * time.Nanosecond)
-	s.clock()
+	s.shld.Set()
 }
-
 
 /*
    Close everything and clear the shift register(s)
@@ -71,9 +69,15 @@ func (s *Srpi) Close() {
    used for detecting which key.
 */
 func (s *Srpi) chassis_cb() {
-	s.RLock()
-	log.Println("button pressed", s.curpin)
-	s.RUnlock()
+	log.Println("you would think true since we detect a rising edge", s.chassis.Get())
+	log.Println("chassis")
+}
+
+func lchassis(msg string) {
+	f := rpi2.GPIOGet(rpi.GPIO22)
+	if f {
+		log.Println(msg)
+	}
 }
 
 func NewSrpi() *Srpi {
@@ -99,6 +103,7 @@ func NewSrpi() *Srpi {
 	srpi.clk = pin
 	srpi.shld = clk
 	srpi.chassis = chassis
+	srpi.M = make(chan func())
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -108,18 +113,35 @@ func NewSrpi() *Srpi {
 		}
 	}()
 
-	for j := 0; j < 5; j++ {
-	log.Println("press some keys")
-	srpi.Load()
-	time.Sleep(3 * time.Second)
-	log.Println("Now we shift")
-	for i := 0; i < 8; i++ {
-		srpi.Shift()
-		log.Println("shift", i)
-		time.Sleep(1 * time.Second)
+/*	err = srpi.chassis.BeginWatch(gpio.EdgeRising, srpi.chassis_cb)
+	if err != nil {
+		log.Fatal("could not watch", err)
 	}
-	}
-	srpi.Close()
+*/
+	go func() {
+		for {
+			M := <-srpi.M
+			M()
+			
+			srpi.clock()
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		for {
+			srpi.Load()
+			time.Sleep(10 * time.Millisecond)
+			srpi.clock()
+			for i := 0; i < 8; i++ {
+				srpi.Shift()
+				if srpi.clock() {
+					log.Println("button", i)
+				}
+			}
+		}
+	}()
+	select {}
 	return srpi
 
 }
