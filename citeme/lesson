@@ -1,0 +1,3 @@
+The corollary dawned on me when I stopped trying to coordinate the callback firing with the event that was supposed to fire it.  I only went in that direction because pin.Get() was busted.  The corollary is the wrong point of view is like losing 80 IQ points.  Even if this conclusion is interesting and worth remebering the experience that led to it was modest, and I'm being nice.  I wasted lots of time persisting in using the awesome library, and in thinking it was awesome till time taught me the truth.
+
+-Nate
