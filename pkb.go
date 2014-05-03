@@ -8,6 +8,7 @@ import (
 	"github.com/davecheney/gpio/rpi"
 	"github.com/hagna/typefaster/rawkb"
 	"log"
+	"os/signal"
 	"os"
 	"strconv"
 	"strings"
@@ -244,7 +245,30 @@ func NewMcs() *Mcs {
 }
 
 func pi_shiftreg_interact() {
-	NewSrpi()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for _ = range c {
+			os.Exit(0)
+		}
+	}()
+	nkeys := 8
+	done := Newsrpi(nkeys, func(keys []int) bool {
+		1/0
+		if keys == nil {
+		} else {
+			log.Println(keys)
+			for _, j := range keys {
+				if j != 1 {
+					return true
+				}
+			}
+			return false
+			log.Println(keys)
+		}
+		return true
+	})
+	<-done
 
 }
 
