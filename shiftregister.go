@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/davecheney/gpio"
-	"github.com/davecheney/gpio/rpi"
-	rpi2 "github.com/davecheney/rpi"
+	"github.com/hagna/gpio"
+	"github.com/hagna/gpio/rpi"
+	rpi2 "github.com/hagna/rpi"
 	"log"
 	"time"
 )

@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/davecheney/gpio"
-	"github.com/davecheney/gpio/rpi"
 	"github.com/hagna/typefaster/rawkb"
 	"log"
 	"os/signal"
@@ -254,7 +252,6 @@ func pi_shiftreg_interact() {
 	}()
 	nkeys := 8
 	done := Newsrpi(nkeys, func(keys []int) bool {
-		1/0
 		if keys == nil {
 		} else {
 			log.Println(keys)
@@ -270,24 +267,6 @@ func pi_shiftreg_interact() {
 	})
 	<-done
 
-}
-
-func pimode_interact() {
-
-	for _, pn := range []int{rpi.GPIO23 - 5, rpi.GPIO23, rpi.GPIO17, rpi.GPIO25, rpi.GPIO24} {
-		log.Println("hello pimode", pn, gpio.EdgeBoth)
-		pin, err := NewButton(pn)
-		if err != nil {
-			log.Println("couldn't open pin", err)
-			return
-		}
-		defer pin.Close()
-
-	}
-	select {
-	case <-time.After(60 * time.Second):
-		break
-	}
 }
 
 func interact() {
