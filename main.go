@@ -183,14 +183,14 @@ func decodestate(keys []bool) uint8 {
 
 /* Decode strokes this ought to run at some high rate in hz */
 func (m *Mcs) keystates(keys []bool) bool {
-		if keysup(keys) {
-			log.Println(decode(m.buf))
-		} else {
-			m.buf |= decodestate(keys)	
-			log.Println(keys)
-			return false
-		}
-		return true
+	if keysup(keys) {
+		log.Println(decode(m.buf))
+	} else {
+		m.buf |= decodestate(keys)
+		log.Println(keys)
+		return false
+	}
+	return true
 }
 
 func pi_shiftreg_interact() {
