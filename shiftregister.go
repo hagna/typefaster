@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var keymap []uint = []uint{3, 4, 2, 0, 5, 6, 7, 1}
+
 type srpi struct {
 	shld    gpio.Pin
 	clkinh  gpio.Pin
@@ -99,7 +101,9 @@ func NewSR(nkeys int, cb func(b []bool) bool) (done chan bool) {
 			srpi.shld.Set()
 			for i := 0; i < srpi.npins; i++ {
 				if srpi.clock() {
-					keys[i] = true
+					k := keymap[i]
+					//log.Println("key", i, "keymap", k)
+					keys[k] = true
 				}
 				srpi.Shift()
 			}

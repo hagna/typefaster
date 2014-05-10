@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+
+
 const (
 	// consonants
 	N  = 1 << 4
@@ -184,11 +186,16 @@ func decodestate(keys []bool) uint8 {
 /* Decode strokes this ought to run at some high rate in hz */
 func (m *Mcs) keystates(keys []bool) bool {
 	if keysup(keys) {
-		log.Println(decode(m.buf))
+		if m.buf == 0xff {
+			return false //quit
+		}
+		if m.buf != 0 {
+			fmt.Print(decode(m.buf))
+			m.buf = 0
+		}
 	} else {
 		m.buf |= decodestate(keys)
-		log.Println(keys)
-		return false
+		return true
 	}
 	return true
 }
