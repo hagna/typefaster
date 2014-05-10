@@ -96,7 +96,7 @@ func readiphod() error {
 			fmt.Println(err)
 			nphones = 0
 		}
-		phonemes := l[2]
+		phonemes := strings.ToLower(l[2])
 		IPHOD[v] = iphodrecord{nphones, phonemes}
 	}
 	return nil
