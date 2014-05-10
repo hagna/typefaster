@@ -4,13 +4,11 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/hagna/typefaster/rawkb"
 	"log"
-	"os/signal"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -72,8 +70,7 @@ type phone struct {
 
 var verbose = flag.Bool("v", false, "verbose?")
 var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
-var rawkbmode = flag.Bool("kb", false, "rawkbmode mode")
-var pimode = flag.Bool("pi", false, "use gpio pins on raspberry pi")
+var pimode = flag.Bool("pi", false, "use shift register connected to raspberry pi")
 
 type iphodrecord struct {
 	nphones  int
@@ -103,12 +100,6 @@ func readiphod() error {
 		IPHOD[v] = iphodrecord{nphones, phonemes}
 	}
 	return nil
-}
-
-type Pad struct {
-	id          string
-	boardstate  uint8
-	keyspressed uint8
 }
 
 var Phones = map[uint8]phone{
@@ -160,89 +151,50 @@ func decode(a uint8) string {
 	return fmt.Sprintf("%x", a)
 }
 
-func (p *Pad) sendphone() {
-	log.Println("sendphone: ", decode(p.keyspressed))
-}
-
-func (p *Pad) keyup(keyno uint8) {
-	b := p.boardstate
-	b = b & ^(1 << keyno)
-	p.boardstate = b
-	if b == 0 {
-		p.sendphone()
-		p.keyspressed = 0
-	}
-}
-
-func (p *Pad) keydown(keyno uint8) {
-	log.Println(p.id, keyno)
-	b := p.boardstate
-	b = b | (1 << keyno)
-	p.boardstate = b
-	p.keyspressed = p.keyspressed | (1 << keyno)
-}
-
 type Mcs struct {
-	keys     map[uint16]uint8
-	watched  map[uint16]func()
-	states   map[string]func(k uint16) string
-	kbevents chan uint16
-	pad      [2]Pad
-}
-
-func (m *Mcs) state_log(k uint16) string {
-	if callable, ok := m.watched[k]; ok {
-		callable()
-	}
-	return "loggy"
-}
-
-func iskeyup(k uint16) bool {
-	if k > 0x80 {
-		return true
-	}
-	return false
-}
-
-func (mcs *Mcs) state_learn(k uint16) string {
-	b := k
-	log.Println("learning the keys starting with", k)
-	for iskeyup(b) {
-		log.Println("learn: discarding keyup", b)
-		b = <-mcs.kbevents
-	}
-	for j := 0; j < 2; j++ {
-		var p Pad = mcs.pad[j]
-		for i := 0; i < 6; i++ {
-			var j int = i
-			mcs.watched[b] = func() {
-				p.keydown(uint8(j))
-			}
-			b = <-mcs.kbevents
-			mcs.watched[b] = func() {
-				p.keyup(uint8(j))
-			}
-			log.Println("learned key", i)
-			b = <-mcs.kbevents
-		}
-	}
-	return "loggy"
+	buf uint8
 }
 
 func NewMcs() *Mcs {
 	m := new(Mcs)
-	m.states = make(map[string]func(k uint16) string)
-	m.keys = make(map[uint16]uint8, 12)
-	m.kbevents = make(chan uint16, 2)
-	m.watched = make(map[uint16]func())
-	m.states["loggy"] = m.state_log
-	m.states["init"] = m.state_learn
-	m.pad = [2]Pad{{"left", 0, 0}, {"right", 0, 0}}
-	log.Println(m.pad)
 	return m
 }
 
+func keysup(keys []bool) bool {
+	res := true
+	for _, v := range keys {
+		if v {
+			return false
+		}
+	}
+	return res
+}
+
+/* Turns keystate ([]bool) into a useful value for decode */
+func decodestate(keys []bool) uint8 {
+	var res uint8 = 0
+	for i, v := range keys {
+		if v {
+			res |= 1 << uint8(i)
+		}
+	}
+	return res
+}
+
+/* Decode strokes this ought to run at some high rate in hz */
+func (m *Mcs) keystates(keys []bool) bool {
+		if keysup(keys) {
+			log.Println(decode(m.buf))
+		} else {
+			m.buf |= decodestate(keys)	
+			log.Println(keys)
+			return false
+		}
+		return true
+}
+
 func pi_shiftreg_interact() {
+	mcs := NewMcs()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -251,71 +203,8 @@ func pi_shiftreg_interact() {
 		}
 	}()
 	nkeys := 8
-	done := Newsrpi(nkeys, func(keys []int) bool {
-		if keys == nil {
-		} else {
-			log.Println(keys)
-			for _, j := range keys {
-				if j != 1 {
-					return true
-				}
-			}
-			return false
-			log.Println(keys)
-		}
-		return true
-	})
+	done := NewSR(nkeys, mcs.keystates)
 	<-done
-
-}
-
-func interact() {
-	/*	logfile, err := os.Create("log")
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.SetOutput(logfile)
-
-	*/
-	if rawkb.SetupKeyboard() == 0 {
-		log.Println("must be on the console for raw keyboard access")
-		return
-	} else {
-		log.Println("setting up rawkb")
-		defer rawkb.RestoreKeyboard()
-	}
-	mcs := NewMcs()
-	log.Println(mcs)
-	log.Println(mcs.kbevents)
-	go func() {
-		mcs.kbevents <- 0x81
-		for {
-			b, ok := rawkb.ReadOnce()
-			if ok != 255 {
-				mcs.kbevents <- b
-
-			}
-			time.Sleep(1 * time.Microsecond)
-		}
-	}()
-
-	m := mcs.states["init"]
-inf:
-	for {
-		select {
-		case b := <-mcs.kbevents:
-			next_state := m(b)
-			next_method, ok := mcs.states[next_state]
-			if !ok {
-				log.Println("no such state", next_state)
-			} else {
-				m = next_method
-			}
-			if b == 1 {
-				break inf
-			}
-		}
-	}
 
 }
 
@@ -385,10 +274,6 @@ func main() {
 			log.Println("problem reading iphod")
 			return
 		}
-	}
-	if *rawkbmode {
-		interact()
-		return
 	}
 	if *pimode {
 		pi_shiftreg_interact()

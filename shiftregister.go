@@ -55,13 +55,12 @@ func (s *srpi) Close() {
 	s.chassis.Close()
 }
 
-
 /*
-Newsrpi takes a number of keys and a callback cb which will be called with a
+Takes a number of keys and a callback cb which will be called with a
 slice of pressed keys If cb returns false the goroutine in here will exit and
-done will fire.  
+true will be sent on done.
 */
-func Newsrpi(nkeys int, cb func(b []int) bool) (done chan bool){
+func NewSR(nkeys int, cb func(b []bool) bool) (done chan bool) {
 	chassis, err := gpio.OpenPin(rpi.GPIO22, gpio.ModeInput)
 	if err != nil {
 		log.Fatal("Error opening pin", err)
@@ -88,8 +87,9 @@ func Newsrpi(nkeys int, cb func(b []int) bool) (done chan bool){
 
 	done = make(chan bool)
 	go func() {
+		// this loop could run as fast as 5 Mhz according to the datasheet for hc165
 		for {
-			keys := make([]int, srpi.npins)
+			keys := make([]bool, srpi.npins)
 			srpi.clk.Set()
 			srpi.clkinh.Set()
 			time.Sleep(250 * time.Nanosecond)
@@ -99,7 +99,7 @@ func Newsrpi(nkeys int, cb func(b []int) bool) (done chan bool){
 			srpi.shld.Set()
 			for i := 0; i < srpi.npins; i++ {
 				if srpi.clock() {
-					keys[i] = 1
+					keys[i] = true
 				}
 				srpi.Shift()
 			}
