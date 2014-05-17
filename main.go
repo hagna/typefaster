@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-
-
 const (
 	// consonants
 	N  = 1 << 4
