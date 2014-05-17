@@ -1,0 +1,55 @@
+package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"github.com/hagna/typefaster"
+)
+
+var verbose = flag.Bool("v", false, "verbose?")
+var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
+var pimode = flag.Bool("pi", false, "use shift register connected to raspberry pi")
+
+func main() {
+	flag.Parse()
+	if *iphod != "" {
+		if err := typefaster.Readiphod(*iphod); err != nil {
+			log.Println("problem reading iphod")
+			return
+		}
+	}
+
+	total := 0
+	utotal := 0
+	ucount := 0
+	for _, fname := range flag.Args() {
+		fh, err := os.Open(fname)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer fh.Close()
+		scanner := bufio.NewScanner(fh)
+		scanner.Split(bufio.ScanWords)
+		for scanner.Scan() {
+			w := scanner.Text()
+			if res, ok := typefaster.IPHOD[w]; ok {
+				if *verbose {
+					fmt.Println(res.Phonemes)
+				}
+				total += res.Nphones
+			} else {
+				if *verbose {
+					fmt.Printf("Unknown:%s\n", w)
+				}
+				utotal += len(w)
+				ucount += 1
+			}
+		}
+		if !*verbose {
+			fmt.Printf("%d phonemes\n%d unknown words of total length %d\n", total, ucount, utotal)
+		}
+	}
+}
