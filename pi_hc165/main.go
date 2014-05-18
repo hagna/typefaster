@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
+	"github.com/hagna/typefaster"
 )
 
 const (
@@ -71,36 +69,6 @@ type phone struct {
 var verbose = flag.Bool("v", false, "verbose?")
 var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
 var pimode = flag.Bool("pi", false, "use shift register connected to raspberry pi")
-
-type iphodrecord struct {
-	nphones  int
-	phonemes string
-}
-
-var IPHOD map[string]iphodrecord
-
-func readiphod() error {
-	IPHOD = make(map[string]iphodrecord)
-	fh, err := os.Open(*iphod)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	defer fh.Close()
-	scanner := bufio.NewScanner(fh)
-	for scanner.Scan() {
-		l := strings.Fields(scanner.Text())
-		v := l[1]
-		nphones, err := strconv.Atoi(l[5])
-		if err != nil {
-			fmt.Println(err)
-			nphones = 0
-		}
-		phonemes := strings.ToLower(l[2])
-		IPHOD[v] = iphodrecord{nphones, phonemes}
-	}
-	return nil
-}
 
 var Phones = map[uint8]phone{
 	AA: phone{cmu: "AA"},
@@ -275,44 +243,14 @@ loop:
 func main() {
 	flag.Parse()
 	if *iphod != "" {
-		if err := readiphod(); err != nil {
+		if tree, err := typefaster.Maketree(*iphod); err != nil {
 			log.Println("problem reading iphod")
 			return
+		} else {
+		tree.Print(tree.Root)
 		}
 	}
-	if *pimode {
-		pi_shiftreg_interact()
-		return
-	}
+	pi_shiftreg_interact()
+	return
 
-	total := 0
-	utotal := 0
-	ucount := 0
-	for _, fname := range flag.Args() {
-		fh, err := os.Open(fname)
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer fh.Close()
-		scanner := bufio.NewScanner(fh)
-		scanner.Split(bufio.ScanWords)
-		for scanner.Scan() {
-			w := scanner.Text()
-			if res, ok := IPHOD[w]; ok {
-				if *verbose {
-					fmt.Println(res.phonemes)
-				}
-				total += res.nphones
-			} else {
-				if *verbose {
-					fmt.Printf("Unknown:%s\n", w)
-				}
-				utotal += len(w)
-				ucount += 1
-			}
-		}
-		if !*verbose {
-			fmt.Printf("%d phonemes\n%d unknown words of total length %d\n", total, ucount, utotal)
-		}
-	}
 }
