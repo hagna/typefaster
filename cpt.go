@@ -67,12 +67,16 @@ func matchprefix(a, b string) string {
 		for i, c := range a {
 			if a[i] == b[i] {
 				res += string(c)
+			} else {
+				break
 			}
 		}
 	} else {
 		for i, c := range b {
 			if b[i] == a[i] {
 				res += string(c)
+			} else {
+				break
 			}
 		}
 	}
@@ -91,9 +95,9 @@ func (t *Tree) Lookup(n *node, s string) (nres *node, match string) {
 			fmt.Println(" does not match")
 			continue
 		} else {
-			fmt.Println(" matches", len(match), "characters")
+			fmt.Println(" matches", len(match), "characters ->", match)
 			var m string
-			nres, m = t.Lookup(c, s[len(m):])
+			nres, m = t.Lookup(c, s[len(match):])
 			match += m
 			// for a partial match
 			if nres == nil {

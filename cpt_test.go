@@ -43,3 +43,41 @@ func TestInsertMore(t *testing.T) {
 	}
 	
 }
+
+
+func TestBug1(t *testing.T) {
+	tree := Tree{&node{"Root", "", nil}}
+	tree.Insert(tree.Root, "A", "top")
+	tree.Insert(tree.Root, "Alpha", "top")
+	tree.Insert(tree.Root, "Anaconda", "top")
+	tree.Insert(tree.Root, "Al", "top")
+	tree.Print(tree.Root)
+	if len(tree.Root.Children) != 1 {
+		t.Fatalf("should have one child")
+	}
+	if tree.Root.Children[0].Edgename != "A" {
+		t.Fatalf("should be A")
+	}
+	if len(tree.Root.Children[0].Children) != 2 {
+		t.Fatalf("should have 2 Children of A, but we have", tree.Root.Children[0].Children)
+	}
+}
+
+func TestBug2(t *testing.T) {
+	tree := Tree{&node{"Root", "", nil}}
+	tree.Insert(tree.Root, "A", "top")
+	tree.Insert(tree.Root, "Alpha", "top")
+	// This next shouldn't be under Alpha
+	tree.Insert(tree.Root, "Aughat", "top")
+	tree.Insert(tree.Root, "Ao", "top")
+	tree.Print(tree.Root)
+	if len(tree.Root.Children) != 1 {
+		t.Fatalf("should have one child")
+	}
+	if tree.Root.Children[0].Edgename != "A" {
+		t.Fatalf("should be A")
+	}
+	if len(tree.Root.Children[0].Children) != 3 {
+		t.Fatalf("should have 3 Children of A, but we have", tree.Root.Children[0].Children)
+	}
+}
