@@ -51,6 +51,9 @@ func (t *Tree) Insert(root *node, k, v string) {
 		}
 	} else {
 		mp := part
+		if part == "" {
+			mp = m
+		}
 		nk := k[len(m):]
 		newnodeA := &node{v, nk, nil}
 		rnk := n.Edgename[len(mp):]
