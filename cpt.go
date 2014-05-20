@@ -1,6 +1,9 @@
 package typefaster
 
-import "fmt"
+import (
+	 "fmt"
+	"strings"
+)
 
 type node struct {
 	Value    string
@@ -28,14 +31,15 @@ func (t *Tree) Print(n *node) {
 }
 
 func (t *Tree) Insert(root *node, k, v string) {
-	n, m := t.Lookup(root, k)
+	n, part, m := t.Lookup(root, k)
+	fmt.Println("Lookup returns", n, part, m)
 	if n == nil {
 		newnode := &node{v, k, nil}
 		fmt.Println("add child", newnode)
 		root.Children = append(root.Children, newnode)
 		return
 	}
-	if m == n.Edgename {
+	if strings.HasSuffix(m, n.Edgename) {
 		// simple case just add the rest
 		nk := k[len(m):]
 		if len(nk) > 0 {
@@ -46,12 +50,13 @@ func (t *Tree) Insert(root *node, k, v string) {
 			fmt.Println("node exists already")
 		}
 	} else {
-		mp := matchprefix(m, n.Edgename)
-		nk := k[len(mp):]
+		mp := part
+		nk := k[len(m):]
 		newnodeA := &node{v, nk, nil}
 		rnk := n.Edgename[len(mp):]
 		newnodeB := &node{n.Value, rnk, n.Children}
 		n.Edgename = mp
+		n.Children = nil 
 		n.Children = append(n.Children, newnodeA)
 		n.Children = append(n.Children, newnodeB)
 		fmt.Println("add child (split a)", newnodeA)
@@ -83,10 +88,13 @@ func matchprefix(a, b string) string {
 	return res
 }
 
-func (t *Tree) Lookup(n *node, s string) (nres *node, match string) {
+/*
+Lookup return the partial match of the current node and the match in the tree so far
+*/
+func (t *Tree) Lookup(n *node, s string) (nres *node, part, match string) {
 	fmt.Printf("Lookup: NODE<%v> for '%s'\n", *n, s)
 	if s == "" {
-		return n, ""
+		return n, "", ""
 	}
 	for _, c := range n.Children {
 		fmt.Printf("\tchild %s", c.Edgename)
@@ -97,14 +105,14 @@ func (t *Tree) Lookup(n *node, s string) (nres *node, match string) {
 		} else {
 			fmt.Println(" matches", len(match), "characters ->", match)
 			var m string
-			nres, m = t.Lookup(c, s[len(match):])
+			nres, part, m = t.Lookup(c, s[len(match):])
 			match += m
 			// for a partial match
 			if nres == nil {
-				return c, match
+				return c, m, match
 			}
-			return nres, match
+			return nres, m, match
 		}
 	}
-	return nil, ""
+	return nil, "", ""
 }
