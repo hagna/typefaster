@@ -46,6 +46,7 @@ func readiphod(iphod string, cb func(word, phonemes string, nphones int)) error 
 	}
 	defer fh.Close()
 	scanner := bufio.NewScanner(fh)
+	scanner.Scan() // chomp first line
 	for scanner.Scan() {
 		l := strings.Fields(scanner.Text())
 		v := strings.ToLower(l[1])

@@ -247,7 +247,11 @@ func main() {
 			log.Println("problem reading iphod")
 			return
 		} else {
-		tree.Print(tree.Root)
+			fmt.Println("-=-=-=-=-=-=-=-=--=-")
+			tree.Print(tree.Root, "")
+			fmt.Println("-=-=-=-=-=-=-=-=--=-")
+			a, b, c := tree.Lookup(tree.Root, "abstention")
+			fmt.Println("is abstention found?", a, b, c)
 		}
 	}
 	pi_shiftreg_interact()

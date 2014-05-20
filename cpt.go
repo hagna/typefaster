@@ -2,7 +2,6 @@ package typefaster
 
 import (
 	 "fmt"
-	"strings"
 )
 
 type node struct {
@@ -19,27 +18,31 @@ func NewTree(rootval string) *Tree {
 	return &Tree{&node{"root", "", nil}}
 }
 
-func (t *Tree) Print(n *node) {
-	if n == nil {
+func (t *Tree) Print(n *node, prefix string) {
+	if len(n.Children) == 0 {
+		fmt.Println(prefix)
 	} else {
 		for _, c := range n.Children {
-			t.Print(c)
+			t.Print(c, prefix + c.Edgename)
 		}
-		fmt.Println(n)
+		if n.Value != "" {
+			fmt.Println(prefix)
+		}
 
 	}
 }
 
 func (t *Tree) Insert(root *node, k, v string) {
+	fmt.Println("insert", k, v)
 	n, part, m := t.Lookup(root, k)
-	fmt.Println("Lookup returns", n, part, m)
+	fmt.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
 		newnode := &node{v, k, nil}
 		fmt.Println("add child", newnode)
 		root.Children = append(root.Children, newnode)
 		return
 	}
-	if strings.HasSuffix(m, n.Edgename) {
+	if n.Edgename == part || n.Edgename == m {
 		// simple case just add the rest
 		nk := k[len(m):]
 		if len(nk) > 0 {
@@ -50,15 +53,18 @@ func (t *Tree) Insert(root *node, k, v string) {
 			fmt.Println("node exists already")
 		}
 	} else {
-		mp := part
+
 		if part == "" {
-			mp = m
+			part = m
 		}
+
+		mp := part
 		nk := k[len(m):]
 		newnodeA := &node{v, nk, nil}
 		rnk := n.Edgename[len(mp):]
 		newnodeB := &node{n.Value, rnk, n.Children}
 		n.Edgename = mp
+		n.Value = ""
 		n.Children = nil 
 		n.Children = append(n.Children, newnodeA)
 		n.Children = append(n.Children, newnodeB)
@@ -95,7 +101,7 @@ func matchprefix(a, b string) string {
 Lookup return the partial match of the current node and the match in the tree so far
 */
 func (t *Tree) Lookup(n *node, s string) (nres *node, part, match string) {
-	fmt.Printf("Lookup: NODE<%v> for '%s'\n", *n, s)
+	fmt.Printf("Lookup: NODE<%+v> for '%s'\n", *n, s)
 	if s == "" {
 		return n, "", ""
 	}
@@ -110,11 +116,14 @@ func (t *Tree) Lookup(n *node, s string) (nres *node, part, match string) {
 			var m string
 			nres, part, m = t.Lookup(c, s[len(match):])
 			match += m
+			if part == "" {
+				part = m
+			}
 			// for a partial match
 			if nres == nil {
-				return c, m, match
+				return c, part, match
 			}
-			return nres, m, match
+			return nres, part, match
 		}
 	}
 	return nil, "", ""
