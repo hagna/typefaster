@@ -113,6 +113,9 @@ func (t *Tree) Lookup(n *node, s string) (nres *node, part, match string) {
 			continue
 		} else {
 			fmt.Println(" matches", len(match), "characters ->", match)
+			if len(match) < len(c.Edgename) {
+				return c, "", match
+			}
 			var m string
 			nres, part, m = t.Lookup(c, s[len(match):])
 			match += m
