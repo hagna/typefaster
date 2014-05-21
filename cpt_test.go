@@ -147,4 +147,22 @@ abstruse
 	}
 }
 
+func TestBugAAA(t *testing.T) {
+	l := `
+a
+aaa
+aardvark
+aaron
+`	
+	s := strings.Split(l, "\n")
+	tree := Tree{&node{"Root", "", nil}}
+	for _, v := range s {
+		tree.Insert(tree.Root, v, "")
+	}
+	_, _, c := tree.Lookup(tree.Root, "aardvark")
+	tree.Print(tree.Root, "")
+	if c != "aardvark" {
+		t.Fatal("didn't find word but found", c)
+	}
+}
 
