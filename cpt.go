@@ -1,7 +1,8 @@
 package typefaster
 
 import (
-	 "fmt"
+	"log"
+	"fmt"
 )
 
 type node struct {
@@ -23,7 +24,7 @@ func (t *Tree) Print(n *node, prefix string) {
 		fmt.Println(prefix)
 	} else {
 		for _, c := range n.Children {
-			t.Print(c, prefix + c.Edgename)
+			t.Print(c, prefix+c.Edgename)
 		}
 		if n.Value != "" {
 			fmt.Println(prefix)
@@ -33,12 +34,12 @@ func (t *Tree) Print(n *node, prefix string) {
 }
 
 func (t *Tree) Insert(root *node, k, v string) {
-	fmt.Println("insert", k, v)
+	log.Println("insert", k, v)
 	n, part, m := t.Lookup(root, k)
-	fmt.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
+	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
 		newnode := &node{v, k, nil}
-		fmt.Println("add child", newnode)
+		log.Println("add child", newnode)
 		root.Children = append(root.Children, newnode)
 		return
 	}
@@ -48,9 +49,9 @@ func (t *Tree) Insert(root *node, k, v string) {
 		if len(nk) > 0 {
 			newnode := &node{v, nk, nil}
 			n.Children = append(n.Children, newnode)
-			fmt.Println("add child (simple)", newnode)
+			log.Println("add child (simple)", newnode)
 		} else {
-			fmt.Println("node exists already")
+			log.Println("node exists already")
 		}
 	} else {
 
@@ -65,11 +66,11 @@ func (t *Tree) Insert(root *node, k, v string) {
 		newnodeB := &node{n.Value, rnk, n.Children}
 		n.Edgename = mp
 		n.Value = ""
-		n.Children = nil 
+		n.Children = nil
 		n.Children = append(n.Children, newnodeA)
 		n.Children = append(n.Children, newnodeB)
-		fmt.Println("add child (split a)", newnodeA)
-		fmt.Println("add child (split b)", newnodeB)
+		log.Println("add child (split a)", newnodeA)
+		log.Println("add child (split b)", newnodeB)
 	}
 
 }
@@ -101,18 +102,18 @@ func matchprefix(a, b string) string {
 Lookup return the partial match of the current node and the match in the tree so far
 */
 func (t *Tree) Lookup(n *node, s string) (nres *node, part, match string) {
-	fmt.Printf("Lookup: NODE<%+v> for '%s'\n", *n, s)
+	log.Printf("Lookup: NODE<%+v> for '%s'\n", *n, s)
 	if s == "" {
 		return n, "", ""
 	}
 	for _, c := range n.Children {
-		fmt.Printf("\tchild %s", c.Edgename)
+		log.Printf("\tchild %s", c.Edgename)
 		match = matchprefix(c.Edgename, s)
 		if match == "" {
-			fmt.Println(" does not match")
+			log.Println(" does not match")
 			continue
 		} else {
-			fmt.Println(" matches", len(match), "characters ->", match)
+			log.Println(" matches", len(match), "characters ->", match)
 			if len(match) < len(c.Edgename) {
 				return c, "", match
 			}
