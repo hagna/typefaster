@@ -44,9 +44,8 @@ func TestInsertMore(t *testing.T) {
 	if len(tree.Root.Children) == 2 {
 		t.Fatal("should only two Children")
 	}
-	
-}
 
+}
 
 func TestBug1(t *testing.T) {
 	tree := Tree{&node{"Root", "", nil}}
@@ -84,7 +83,6 @@ func TestBug2(t *testing.T) {
 		t.Fatal("should have 3 Children of A, but we have", tree.Root.Children[0].Children)
 	}
 }
-
 
 func showChildren(t *Tree, test *testing.T) {
 	for i, v := range t.Root.Children {
@@ -134,7 +132,7 @@ abstraction
 abstractions
 abstracts
 abstruse
-	`	
+	`
 	s := strings.Split(l, "\n")
 	tree := Tree{&node{"Root", "", nil}}
 	for _, v := range s {
@@ -153,7 +151,7 @@ a
 aaa
 aardvark
 aaron
-`	
+`
 	s := strings.Split(l, "\n")
 	tree := Tree{&node{"Root", "", nil}}
 	for _, v := range s {
@@ -165,4 +163,3 @@ aaron
 		t.Fatal("didn't find word but found", c)
 	}
 }
-

@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/hagna/typefaster"
 	"log"
 	"os"
 	"os/signal"
-	"github.com/hagna/typefaster"
 )
 
 const (

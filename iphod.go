@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 )
+
 type iphodrecord struct {
 	Nphones  int
 	Phonemes string
@@ -33,7 +34,7 @@ func Maketree(iphod string) (*Tree, error) {
 	err := readiphod(iphod, cb)
 	if err != nil {
 		return tree, err
-	} 
+	}
 	return tree, nil
 }
 
@@ -60,6 +61,3 @@ func readiphod(iphod string, cb func(word, phonemes string, nphones int)) error 
 	}
 	return nil
 }
-
-
-

@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/hagna/typefaster"
 	"log"
 	"os"
-	"github.com/hagna/typefaster"
 )
 
 var verbose = flag.Bool("v", false, "verbose?")

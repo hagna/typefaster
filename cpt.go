@@ -1,8 +1,8 @@
 package typefaster
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -39,7 +39,7 @@ func (t *Tree) Print(n *node, prefix string) {
 func isDup(part, match, edgename, k string) bool {
 	res := false
 	if len(match) <= len(edgename) {
-		partmatch := match + part + edgename[len(match):] 
+		partmatch := match + part + edgename[len(match):]
 		if strings.HasPrefix(k, partmatch) {
 		} else {
 			log.Printf("isDup: (yes) '%s' != '%s'\n", partmatch, k)
@@ -59,7 +59,7 @@ func (t *Tree) Insert(root *node, k, v string) {
 		root.Children = append(root.Children, newnode)
 		return
 	}
-	if n.Edgename == part || n.Edgename == m  {
+	if n.Edgename == part || n.Edgename == m {
 		// simple case just add the rest
 		if isDup(part, m, n.Edgename, k) {
 			log.Println("would be a dup")
@@ -74,7 +74,7 @@ func (t *Tree) Insert(root *node, k, v string) {
 			}
 			return
 		}
-	} 
+	}
 
 	if part == "" {
 		part = m
