@@ -29,7 +29,8 @@ func Readiphod(iphod string) error {
 func Maketree(iphod string) (*Tree, error) {
 	tree := NewTree("root")
 	cb := func(word, phonemes string, nphones int) {
-		tree.Insert(tree.Root, word, phonemes)
+		phonemes = strings.Replace(phonemes, ".", "", -1)
+		tree.Insert(tree.Root, phonemes, word)
 	}
 	err := readiphod(iphod, cb)
 	if err != nil {

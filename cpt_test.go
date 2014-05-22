@@ -6,7 +6,7 @@ import (
 )
 
 func TestInsertDup(t *testing.T) {
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	tree.Insert(tree.Root, "T.AH.P", "top")
 	tree.Insert(tree.Root, "T.AH.P", "top")
 	if len(tree.Root.Children) > 1 {
@@ -15,7 +15,7 @@ func TestInsertDup(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	tree.Insert(tree.Root, "T.AH.P", "top")
 	tree.Insert(tree.Root, "T.AH.P.S", "tops")
 	tree.Print(tree.Root, "")
@@ -25,7 +25,7 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertSplit(t *testing.T) {
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	tree.Insert(tree.Root, "T.AH.P", "top")
 	tree.Insert(tree.Root, "T.AH.T", "tot")
 	if len(tree.Root.Children) == 2 {
@@ -34,7 +34,7 @@ func TestInsertSplit(t *testing.T) {
 }
 
 func TestInsertMore(t *testing.T) {
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	tree.Insert(tree.Root, "test", "top")
 	tree.Insert(tree.Root, "slow", "top")
 	tree.Insert(tree.Root, "water", "top")
@@ -48,7 +48,7 @@ func TestInsertMore(t *testing.T) {
 }
 
 func TestBug1(t *testing.T) {
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	tree.Insert(tree.Root, "A", "top")
 	tree.Insert(tree.Root, "Alpha", "top")
 	tree.Insert(tree.Root, "Anaconda", "top")
@@ -66,7 +66,7 @@ func TestBug1(t *testing.T) {
 }
 
 func TestBug2(t *testing.T) {
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	tree.Insert(tree.Root, "A", "top")
 	tree.Insert(tree.Root, "Alpha", "top")
 	// This next shouldn't be under Alpha
@@ -84,21 +84,29 @@ func TestBug2(t *testing.T) {
 	}
 }
 
-func showChildren(t *Tree, test *testing.T) {
-	for i, v := range t.Root.Children {
-		test.Log(i, v)
+func isFound(s string, tree Tree, t *testing.T) {
+	_, _, c := tree.Lookup(tree.Root, s)
+	tree.Print(tree.Root, "")
+	if c != s {
+		t.Fatal("didn't find word", s, "but found", c)
 	}
 }
 
 func TestBug3(t *testing.T) {
-	tree := Tree{&node{"Root", "", nil}}
-	tree.Insert(tree.Root, "Water", "")
-	tree.Insert(tree.Root, "Watering", "")
-	tree.Insert(tree.Root, "Waterings", "")
-	tree.Insert(tree.Root, "Waterink", "")
-	tree.Print(tree.Root, "")
+	l := `Water
+Watering
+Waterings
+Waterink`
+	s := strings.Split(l, "\n")
+	tree := Tree{NewNode("root", "", nil)}
+	for _, v := range s {
+		tree.Insert(tree.Root, v, "")
+	}
+	for _, v := range s {
+		isFound(v, tree, t)
+	}
 	if len(tree.Root.Children) != 1 {
-		t.Fatal("should have one child")
+		t.Fatal("should have one child", tree.Root.Children)
 	}
 	if tree.Root.Children[0].Edgename != "Water" {
 		t.Fatal("should not be", tree.Root.Children[0].Edgename)
@@ -118,8 +126,7 @@ func TestBug3(t *testing.T) {
 }
 
 func TestBug4(t *testing.T) {
-	l := `
-abstain
+	l := `abstain
 abstained
 abstaining
 abstention
@@ -131,10 +138,9 @@ abstracted
 abstraction
 abstractions
 abstracts
-abstruse
-	`
+abstruse`
 	s := strings.Split(l, "\n")
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	for _, v := range s {
 		tree.Insert(tree.Root, v, "")
 	}
@@ -153,7 +159,7 @@ aardvark
 aaron
 `
 	s := strings.Split(l, "\n")
-	tree := Tree{&node{"Root", "", nil}}
+	tree := Tree{NewNode("root", "", nil)}
 	for _, v := range s {
 		tree.Insert(tree.Root, v, "")
 	}
@@ -161,5 +167,36 @@ aaron
 	tree.Print(tree.Root, "")
 	if c != "aardvark" {
 		t.Fatal("didn't find word but found", c)
+	}
+}
+
+func TestMkdir(t *testing.T) {
+	l := `abstain
+abstained
+abstaining
+abstention
+abstentions
+abstinence
+abstinent
+abstract
+abstracted
+abstraction
+abstractions
+abstracts
+abstruse`
+	s := strings.Split(l, "\n")
+	tree := Tree{NewNode("root", "", nil)}
+	for _, v := range s {
+		tree.Insert(tree.Root, v, "")
+	}
+	called := 0
+	callme := func(k, v []string) {
+		t.Log(k)
+		called += len(k)
+	}
+	tree.mkdir(tree.Root, []string{"root"}, callme)
+	x := 41
+	if x != called {
+		t.Fatal("called", called, "times but should have been", x)
 	}
 }

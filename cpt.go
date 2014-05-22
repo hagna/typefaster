@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"os"
 )
 
 type node struct {
-	Value    string
+	Value    []string
 	Edgename string
 	Children []*node
 }
@@ -17,18 +18,66 @@ type Tree struct {
 }
 
 func NewTree(rootval string) *Tree {
-	return &Tree{&node{"root", "", nil}}
+	return &Tree{NewNode("root", "", nil)}
 }
 
+// depth first search 
 func (t *Tree) Print(n *node, prefix string) {
 	if len(n.Children) == 0 {
-		fmt.Println(prefix)
+		fmt.Println(prefix, n.Value)
 	} else {
 		for _, c := range n.Children {
 			t.Print(c, prefix+c.Edgename)
 		}
-		if n.Value != "" {
-			fmt.Println(prefix)
+		if len(n.Value) != 0 {
+			fmt.Println(prefix, n.Value)
+		}
+
+	}
+}
+
+func (t *Tree) Mkdir(n *node, prefix []string) {
+	cb :=  func(key, value []string) {
+		dir := strings.Join(key, "/")
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			fmt.Println(err)
+		}
+		vname := dir + "/value"
+		if _, err := os.Stat(vname); os.IsNotExist(err) {
+			f, err := os.Create(vname)
+			if err != nil {
+				fmt.Println(err)
+			}
+			for _, v := range value {
+				fmt.Fprintf(f, "%s\n", v)
+			}
+			f.Close()
+		} else {
+			f, err := os.OpenFile(vname, os.O_RDWR, 0666)
+			if err != nil {
+				fmt.Println(err)
+			}
+			for _, v := range value {
+				fmt.Fprintf(f, "%s\n", v)
+			}
+			f.Close()
+		}
+	}
+	t.mkdir(n, prefix, cb)
+}
+
+func (t *Tree) mkdir(n *node, prefix []string, cb func(s, v []string)) {
+	if len(n.Children) == 0 {
+		fmt.Println(prefix, n.Value)
+		cb(prefix, n.Value)
+	} else {
+		for _, c := range n.Children {
+			t.mkdir(c, append(prefix, c.Edgename), cb)
+		}
+		if len(n.Value) != 0 {
+			cb(prefix, n.Value)
+			fmt.Println(prefix, n.Value)
 		}
 
 	}
@@ -36,16 +85,27 @@ func (t *Tree) Print(n *node, prefix string) {
 
 // tells us if we have a duplicate edge
 // as in aaardvark
-func isDup(part, match, edgename, k string) bool {
-	res := false
+func wellFormed(part, match, edgename, k string) bool {
+	res := true
 	if len(match) <= len(edgename) {
 		partmatch := match + part + edgename[len(match):]
 		if strings.HasPrefix(k, partmatch) {
 		} else {
-			log.Printf("isDup: (yes) '%s' != '%s'\n", partmatch, k)
-			return true
+			log.Printf("wellFormed: (no) '%s' != '%s'\n", partmatch, k)
+			return false
 		}
 	}
+	return res
+}
+
+
+func NewNode(value, edgename string, children []*node) *node {
+	v := []string{}
+	if value != "" {
+		v = append(v, value)
+	}
+	log.Println("NewNode: value is", v, len(v))
+	res := &node{v, edgename, children}
 	return res
 }
 
@@ -54,22 +114,23 @@ func (t *Tree) Insert(root *node, k, v string) {
 	n, part, m := t.Lookup(root, k)
 	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
-		newnode := &node{v, k, nil}
+		newnode := NewNode(v, k, nil)
 		log.Println("add child", newnode)
 		root.Children = append(root.Children, newnode)
 		return
 	}
 	if n.Edgename == part || n.Edgename == m {
 		// simple case just add the rest
-		if isDup(part, m, n.Edgename, k) {
-			log.Println("would be a dup")
+		if !wellFormed(part, m, n.Edgename, k) {
+			log.Println("would not be well formed")
 		} else {
 			nk := k[len(m):]
 			if len(nk) > 0 {
-				newnode := &node{v, nk, nil}
+				newnode := NewNode(v, nk, nil)
 				n.Children = append(n.Children, newnode)
 				log.Println("add child (simple)", newnode)
 			} else {
+				n.Value = append(n.Value, v)
 				log.Println("node exists already")
 			}
 			return
@@ -82,11 +143,12 @@ func (t *Tree) Insert(root *node, k, v string) {
 
 	mp := part
 	nk := k[len(m):]
-	newnodeA := &node{v, nk, nil}
+	newnodeA := NewNode(v, nk, nil)
 	rnk := n.Edgename[len(mp):]
-	newnodeB := &node{n.Value, rnk, n.Children}
+	newnodeB := NewNode("", rnk, n.Children) 
+	newnodeB.Value = n.Value
 	n.Edgename = mp
-	n.Value = ""
+	n.Value = []string{}
 	n.Children = nil
 	n.Children = append(n.Children, newnodeA)
 	n.Children = append(n.Children, newnodeB)

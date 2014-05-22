@@ -11,11 +11,19 @@ import (
 
 var verbose = flag.Bool("v", false, "verbose?")
 var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
-var pimode = flag.Bool("pi", false, "use shift register connected to raspberry pi")
+var mkdir = flag.String("mkdir", "", "make the iphod into a trie on disk")
 
 func main() {
 	flag.Parse()
 	if *iphod != "" {
+		if *mkdir != "" {
+			if tree, err := typefaster.Maketree(*iphod); err != nil {
+				log.Println("problem loading iphod")
+			} else {
+				tree.Mkdir(tree.Root, []string{*mkdir})
+			}
+			return
+		}
 		if err := typefaster.Readiphod(*iphod); err != nil {
 			log.Println("problem reading iphod")
 			return
