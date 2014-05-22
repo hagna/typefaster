@@ -3,6 +3,7 @@ package typefaster
 import (
 	"log"
 	"fmt"
+	"strings"
 )
 
 type node struct {
@@ -33,6 +34,21 @@ func (t *Tree) Print(n *node, prefix string) {
 	}
 }
 
+// tells us if we have a duplicate edge
+// as in aaardvark
+func isDup(part, match, edgename, k string) bool {
+	res := false
+	if len(match) <= len(edgename) {
+		partmatch := match + part + edgename[len(match):] 
+		if strings.HasPrefix(k, partmatch) {
+		} else {
+			log.Printf("isDup: (yes) '%s' != '%s'\n", partmatch, k)
+			return true
+		}
+	}
+	return res
+}
+
 func (t *Tree) Insert(root *node, k, v string) {
 	log.Println("insert", k, v)
 	n, part, m := t.Lookup(root, k)
@@ -43,35 +59,39 @@ func (t *Tree) Insert(root *node, k, v string) {
 		root.Children = append(root.Children, newnode)
 		return
 	}
-	if n.Edgename == part || n.Edgename == m {
+	if n.Edgename == part || n.Edgename == m  {
 		// simple case just add the rest
-		nk := k[len(m):]
-		if len(nk) > 0 {
-			newnode := &node{v, nk, nil}
-			n.Children = append(n.Children, newnode)
-			log.Println("add child (simple)", newnode)
+		if isDup(part, m, n.Edgename, k) {
+			log.Println("would be a dup")
 		} else {
-			log.Println("node exists already")
+			nk := k[len(m):]
+			if len(nk) > 0 {
+				newnode := &node{v, nk, nil}
+				n.Children = append(n.Children, newnode)
+				log.Println("add child (simple)", newnode)
+			} else {
+				log.Println("node exists already")
+			}
+			return
 		}
-	} else {
+	} 
 
-		if part == "" {
-			part = m
-		}
-
-		mp := part
-		nk := k[len(m):]
-		newnodeA := &node{v, nk, nil}
-		rnk := n.Edgename[len(mp):]
-		newnodeB := &node{n.Value, rnk, n.Children}
-		n.Edgename = mp
-		n.Value = ""
-		n.Children = nil
-		n.Children = append(n.Children, newnodeA)
-		n.Children = append(n.Children, newnodeB)
-		log.Println("add child (split a)", newnodeA)
-		log.Println("add child (split b)", newnodeB)
+	if part == "" {
+		part = m
 	}
+
+	mp := part
+	nk := k[len(m):]
+	newnodeA := &node{v, nk, nil}
+	rnk := n.Edgename[len(mp):]
+	newnodeB := &node{n.Value, rnk, n.Children}
+	n.Edgename = mp
+	n.Value = ""
+	n.Children = nil
+	n.Children = append(n.Children, newnodeA)
+	n.Children = append(n.Children, newnodeB)
+	log.Println("add child (split a)", newnodeA)
+	log.Println("add child (split b)", newnodeB)
 
 }
 
