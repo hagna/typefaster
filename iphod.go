@@ -24,12 +24,49 @@ func Readiphod(iphod string) error {
 	return readiphod(iphod, cb)
 }
 
+var encodemap map[string]uint8
+var decodemap map[uint8]string
+
+func init() {
+	s := "AA.AE.AH.AO.AW.AY.B.CH.D.DH.EH.ER.EY.F.G.HH.IH.IY.JH.K.L.M.N.NG.OW.OY.P.R.S.SH.T.TH.UH.UW.V.W.Y.Z.ZH"
+	encodemap = make(map[string]uint8)
+	decodemap = make(map[uint8]string)
+	for i, v := range strings.Split(s, ".") {
+		j := 'A' + uint8(i)
+		encodemap[v] = j
+		decodemap[j] = v
+	}
+}
+
+/* maybe this is silly but the cpt uses strings and each char is an item, so
+we use this to encode cmu style phonemes (AH AA etc.) to single chars for use
+in the cpt, and then decode when we want to display them.  Alternatively we
+could change cpt to use []string, but it's already working with string so why
+bother.
+*/
+func encode(p string) string {
+	res := ""
+	for _, v := range strings.Split(p, ".") {
+		res += string(byte(encodemap[v]))
+	}
+	return res
+
+}
+
+func decode(p string) string {
+	res := []string{}
+	for _, v := range p {
+		res = append(res, decodemap[uint8(v)])
+	}
+	return strings.Join(res, ".")
+}
+
 // make a compact prefix tree out of iphod for the keyboard to use
 // spelling words out of phonemes
 func Maketree(iphod string) (*Tree, error) {
 	tree := NewTree("root")
 	cb := func(word, phonemes string, nphones int) {
-		phonemes = strings.Replace(phonemes, ".", "", -1)
+		phonemes = encode(phonemes)
 		tree.Insert(tree.Root, phonemes, word)
 	}
 	err := readiphod(iphod, cb)

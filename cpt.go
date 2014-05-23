@@ -38,7 +38,13 @@ func (t *Tree) Print(n *node, prefix string) {
 
 func (t *Tree) Mkdir(n *node, prefix []string) {
 	cb :=  func(key, value []string) {
-		dir := strings.Join(key, "/")
+		res := []string{}
+		// skip first no encoded root
+		for _, v := range key[1:] {
+			res = append(res, decode(v))
+		}
+		dir := key[0] + "/" + strings.Join(res, "/")
+		fmt.Println("DIR", dir)
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
 			fmt.Println(err)
