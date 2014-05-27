@@ -10,12 +10,12 @@ long as the chording scheme isn't too fancy, like on a stenograph.  This
 project aims to produce a chording keyboard on which you can reach 80-90 WPM
 after about 50 hours of practice. It will work one handed for about half the
 speed and it will be eyes free i.e. you won't have to watch the keys or even
-fight hard to supress the urge to watch the keys.
+fight the urge to watch the keys.
 
 
 pi_hc165 has the command for running the keyboard program using the hc165
 shift register
 pkb has the pkb utility command
 citeme has the reference material
-this dir has the library and common code
+this dir has the common code
 
