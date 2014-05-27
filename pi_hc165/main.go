@@ -41,7 +41,7 @@ func keysup(keys []bool) bool {
 	return res
 }
 
-/* Turns keystate ([]bool) into a useful value for decode */
+/* Turns keystate ([]bool) into a useful value for decode. 8 keys only :) */
 func decodestate(keys []bool) uint8 {
 	var res uint8 = 0
 	for i, v := range keys {
@@ -55,6 +55,7 @@ func decodestate(keys []bool) uint8 {
 /* Decode strokes this ought to run at some high rate in hz */
 func (m *Mcs) keystates(keys []bool) bool {
 	if keysup(keys) {
+		// got a stroke
 		if m.buf == 0xff {
 			return false //quit
 		}
@@ -85,7 +86,7 @@ func pi_shiftreg_interact() {
 }
 
 /*
-want curses here they are -->
+want curses? here they are -->
 type keys struct {
 	termbox_event chan termbox.Event
 }

@@ -3,7 +3,7 @@ package typefaster
 const (
 	// consonants
 	/* 24 of them, 12 from the set without using the thumb
-	   12 more from the set that uses 1 on the thumb
+	   12 more from the set that uses 1 
 	*/
 	N  = 1 << 4
 	T  = 1 << 3
@@ -53,7 +53,7 @@ const (
 	OY  = 1 | 1<<2 | 1<<4 | 1<<5
 )
 
-type phone struct {
+type Phone struct {
 	Cmu    string // from cmupd
 	Klat   string // klattese
 	Ipa    string // IPA
@@ -63,45 +63,45 @@ type phone struct {
 	Des    string // deseret alphabet
 }
 
-var Phones = map[uint8]phone{
-	AA: phone{Cmu: "AA"},
-	AE: phone{Cmu: "AE"},
-	AH: phone{Cmu: "AH"},
-	AO: phone{Cmu: "AO"},
-	AW: phone{Cmu: "AW"},
-	AY: phone{Cmu: "AY"},
-	B:  phone{Cmu: "B"},
-	CH: phone{Cmu: "CH"},
-	D:  phone{Cmu: "D"},
-	DH: phone{Cmu: "DH"},
-	EH: phone{Cmu: "EH"},
-	ER: phone{Cmu: "ER"},
-	EY: phone{Cmu: "EY"},
-	F:  phone{Cmu: "F"},
-	G:  phone{Cmu: "G"},
-	HH: phone{Cmu: "HH"},
-	IH: phone{Cmu: "IH"},
-	IY: phone{Cmu: "IY"},
-	JH: phone{Cmu: "JH"},
-	K:  phone{Cmu: "K"},
-	L:  phone{Cmu: "L"},
-	M:  phone{Cmu: "M"},
-	N:  phone{Cmu: "N"},
-	NG: phone{Cmu: "NG"},
-	OW: phone{Cmu: "OW"},
-	OY: phone{Cmu: "OY"},
-	P:  phone{Cmu: "P"},
-	R:  phone{Cmu: "R"},
-	S:  phone{Cmu: "S"},
-	SH: phone{Cmu: "SH"},
-	T:  phone{Cmu: "T"},
-	TH: phone{Cmu: "TH"},
-	UH: phone{Cmu: "UH"},
-	UW: phone{Cmu: "UW"},
-	V:  phone{Cmu: "V"},
-	W:  phone{Cmu: "W"},
-	Y:  phone{Cmu: "Y"},
-	Z:  phone{Cmu: "Z"},
-	ZH: phone{Cmu: "ZH"},
+var Phones = map[uint8]Phone{
+	AA: Phone{Cmu: "AA"},
+	AE: Phone{Cmu: "AE"},
+	AH: Phone{Cmu: "AH"},
+	AO: Phone{Cmu: "AO"},
+	AW: Phone{Cmu: "AW"},
+	AY: Phone{Cmu: "AY"},
+	B:  Phone{Cmu: "B"},
+	CH: Phone{Cmu: "CH"},
+	D:  Phone{Cmu: "D"},
+	DH: Phone{Cmu: "DH"},
+	EH: Phone{Cmu: "EH"},
+	ER: Phone{Cmu: "ER"},
+	EY: Phone{Cmu: "EY"},
+	F:  Phone{Cmu: "F"},
+	G:  Phone{Cmu: "G"},
+	HH: Phone{Cmu: "HH"},
+	IH: Phone{Cmu: "IH"},
+	IY: Phone{Cmu: "IY"},
+	JH: Phone{Cmu: "JH"},
+	K:  Phone{Cmu: "K"},
+	L:  Phone{Cmu: "L"},
+	M:  Phone{Cmu: "M"},
+	N:  Phone{Cmu: "N"},
+	NG: Phone{Cmu: "NG"},
+	OW: Phone{Cmu: "OW"},
+	OY: Phone{Cmu: "OY"},
+	P:  Phone{Cmu: "P"},
+	R:  Phone{Cmu: "R"},
+	S:  Phone{Cmu: "S"},
+	SH: Phone{Cmu: "SH"},
+	T:  Phone{Cmu: "T"},
+	TH: Phone{Cmu: "TH"},
+	UH: Phone{Cmu: "UH"},
+	UW: Phone{Cmu: "UW"},
+	V:  Phone{Cmu: "V"},
+	W:  Phone{Cmu: "W"},
+	Y:  Phone{Cmu: "Y"},
+	Z:  Phone{Cmu: "Z"},
+	ZH: Phone{Cmu: "ZH"},
 }
 

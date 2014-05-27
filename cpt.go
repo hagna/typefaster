@@ -186,6 +186,21 @@ func matchprefix(a, b string) string {
 	return res
 }
 
+/* 
+I'm not planning to have more than one good implementation of this interface
+it's more for letting me have one test for the implementations of Lookup to
+decide what one is best 
+*/
+type cpt interface {
+	Lookup(*node, string) (*node, string, string)
+}
+
+type TreePath string
+
+func (t *TreePath) Lookup(n *node, s string) (nres *node, part, match string) {
+	return nil, "", ""
+}
+
 /*
 Lookup return the partial match of the current node and the match in the tree so far
 */
