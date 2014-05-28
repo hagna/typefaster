@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 	"os"
+	"io/ioutil"
 )
 
 type node struct {
@@ -111,6 +112,7 @@ func NewNode(value, edgename string, children []*node) *node {
 		v = append(v, value)
 	}
 	log.Println("NewNode: value is", v, len(v))
+	log.Println("NewNode: edgename", edgename)
 	res := &node{v, edgename, children}
 	return res
 }
@@ -187,9 +189,7 @@ func matchprefix(a, b string) string {
 }
 
 /* 
-I'm not planning to have more than one good implementation of this interface
-it's more for letting me have one test for the implementations of Lookup to
-decide what one is best 
+This interface is not for having more than one good implementation, but for finding the best implementation.
 */
 type cpt interface {
 	Lookup(*node, string) (*node, string, string)
@@ -198,6 +198,59 @@ type cpt interface {
 type TreePath string
 
 func (t *TreePath) Lookup(n *node, s string) (nres *node, part, match string) {
+	log.Println("Lookup for", s)
+	if s == "" {
+		return n, "", ""
+	}
+	var dirs []os.FileInfo
+	var err error
+	if n == nil {
+		s = encode(s)
+		log.Println("tree path is", *t)
+		n = NewNode("", string(*t), nil)
+		dirs, err = ioutil.ReadDir(n.Edgename)
+		if err != nil {
+		log.Println(err)
+		return nil, "", ""
+		}
+	}  else {
+	dirs, err = ioutil.ReadDir(decode(n.Edgename))
+	if err != nil {
+		log.Println("really looking for", decode(n.Edgename))
+		log.Println(err)
+		return nil, "", ""
+	}
+	}
+	children := []*node{}
+	for _, dir := range dirs {
+		name := dir.Name()
+		log.Println("child dir", name)
+		children = append(children, NewNode("", encode(name), nil))
+	}
+	for _, c := range children {
+		match = matchprefix(c.Edgename, s)
+		if match == "" {
+			log.Println(" does not match")
+			continue
+		} else {
+			log.Println(" matches", len(match), "characters ->", match)
+			if len(match) < len(c.Edgename) {
+				return c, "", match
+			}
+			var m string
+			nres, part, m = t.Lookup(c, s[len(match):])
+			match += m
+			if part == "" {
+				part = m
+			}
+			// for a partial match
+			if nres == nil {
+				return c, part, match
+			}
+			return nres, part, match
+		}
+	}
+ 
 	return nil, "", ""
 }
 

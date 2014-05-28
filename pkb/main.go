@@ -10,8 +10,9 @@ import (
 )
 
 var verbose = flag.Bool("v", false, "verbose?")
-var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
+var iphod = flag.String("iphod", "", "iphod file name")
 var mkdir = flag.String("mkdir", "", "make the iphod into a trie on disk")
+var lookup = flag.String("l", "", "lookup a word")
 
 func main() {
 	flag.Parse()
@@ -30,6 +31,17 @@ func main() {
 		}
 	}
 
+	if *lookup != "" {
+		tree := typefaster.TreePath(*lookup)
+		for _, w := range flag.Args() {
+			log.Println(w)
+			a, b, c := tree.Lookup(nil, w)
+			log.Println("found", a, b, c)
+		}
+
+			log.Println(tree)
+		return
+	}
 	total := 0
 	utotal := 0
 	ucount := 0
