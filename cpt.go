@@ -5,13 +5,42 @@ import (
 	"log"
 	"strings"
 	"os"
-	"io/ioutil"
 )
 
 type node struct {
 	Value    []string
 	Edgename string
-	Children []*node
+	Children []Node
+}
+
+func (n *node) String() string {
+	return fmt.Sprintf("%+v", *n)
+} 
+
+func (n *node) GetNode() *nodelike {
+	return &nodelike{n.Value, n.Edgename, n.Children}
+}	
+
+type nodelike struct {
+	Value    []string
+	Edgename string
+	Children []Node
+}
+
+func (n *nodelike) GetNode() *nodelike {
+	return n
+}	
+
+func (n *nodelike) String() string {
+	return fmt.Sprintf("%+v", *n)
+} 
+
+
+
+/* this permits us to implement another version of node, but without any boilerplate getters and setters, and so far I think it beats boilerplate */
+type Node interface {
+	GetNode() *nodelike
+	String() string
 }
 
 type Tree struct {
@@ -23,11 +52,13 @@ func NewTree(rootval string) *Tree {
 }
 
 // depth first search 
-func (t *Tree) Print(n *node, prefix string) {
+func (t *Tree) Print(i Node, prefix string) {
+	n := i.GetNode()
 	if len(n.Children) == 0 {
 		fmt.Println(prefix, n.Value)
 	} else {
-		for _, c := range n.Children {
+		for _, i := range n.Children {
+			c := i.GetNode()
 			t.Print(c, prefix+c.Edgename)
 		}
 		if len(n.Value) != 0 {
@@ -37,7 +68,8 @@ func (t *Tree) Print(n *node, prefix string) {
 	}
 }
 
-func (t *Tree) Mkdir(n *node, prefix []string) {
+func (t *Tree) Mkdir(i Node, prefix []string) {
+	n := i.GetNode()
 	cb :=  func(key, value []string) {
 		res := []string{}
 		// skip first no encoded root
@@ -74,12 +106,14 @@ func (t *Tree) Mkdir(n *node, prefix []string) {
 	t.mkdir(n, prefix, cb)
 }
 
-func (t *Tree) mkdir(n *node, prefix []string, cb func(s, v []string)) {
+func (t *Tree) mkdir(i Node, prefix []string, cb func(s, v []string)) {
+	n := i.GetNode()
 	if len(n.Children) == 0 {
 		fmt.Println(prefix, n.Value)
 		cb(prefix, n.Value)
 	} else {
-		for _, c := range n.Children {
+		for _, i := range n.Children {
+			c := i.GetNode()
 			t.mkdir(c, append(prefix, c.Edgename), cb)
 		}
 		if len(n.Value) != 0 {
@@ -106,7 +140,7 @@ func wellFormed(part, match, edgename, k string) bool {
 }
 
 
-func NewNode(value, edgename string, children []*node) *node {
+func NewNode(value, edgename string, children []Node) *node {
 	v := []string{}
 	if value != "" {
 		v = append(v, value)
@@ -119,7 +153,13 @@ func NewNode(value, edgename string, children []*node) *node {
 
 func (t *Tree) Insert(root *node, k, v string) {
 	log.Println("insert", k, v)
-	n, part, m := t.Lookup(root, k)
+	i, part, m := t.Lookup(root, k)
+	var n *node
+	if i == nil {
+		n = nil
+	} else {
+		n = i.GetNode()
+	}
 	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
 		newnode := NewNode(v, k, nil)
@@ -155,6 +195,7 @@ func (t *Tree) Insert(root *node, k, v string) {
 	rnk := n.Edgename[len(mp):]
 	newnodeB := NewNode("", rnk, n.Children) 
 	newnodeB.Value = n.Value
+	
 	n.Edgename = mp
 	n.Value = []string{}
 	n.Children = nil
@@ -188,81 +229,19 @@ func matchprefix(a, b string) string {
 	return res
 }
 
-/* 
-This interface is not for having more than one good implementation, but for finding the best implementation.
-*/
-type cpt interface {
-	Lookup(*node, string) (*node, string, string)
-}
 
-type TreePath string
-
-func (t *TreePath) Lookup(n *node, s string) (nres *node, part, match string) {
-	log.Println("Lookup for", s)
-	if s == "" {
-		return n, "", ""
-	}
-	var dirs []os.FileInfo
-	var err error
-	if n == nil {
-		s = encode(s)
-		log.Println("tree path is", *t)
-		n = NewNode("", string(*t), nil)
-		dirs, err = ioutil.ReadDir(n.Edgename)
-		if err != nil {
-		log.Println(err)
-		return nil, "", ""
-		}
-	}  else {
-	dirs, err = ioutil.ReadDir(decode(n.Edgename))
-	if err != nil {
-		log.Println("really looking for", decode(n.Edgename))
-		log.Println(err)
-		return nil, "", ""
-	}
-	}
-	children := []*node{}
-	for _, dir := range dirs {
-		name := dir.Name()
-		log.Println("child dir", name)
-		children = append(children, NewNode("", encode(name), nil))
-	}
-	for _, c := range children {
-		match = matchprefix(c.Edgename, s)
-		if match == "" {
-			log.Println(" does not match")
-			continue
-		} else {
-			log.Println(" matches", len(match), "characters ->", match)
-			if len(match) < len(c.Edgename) {
-				return c, "", match
-			}
-			var m string
-			nres, part, m = t.Lookup(c, s[len(match):])
-			match += m
-			if part == "" {
-				part = m
-			}
-			// for a partial match
-			if nres == nil {
-				return c, part, match
-			}
-			return nres, part, match
-		}
-	}
- 
-	return nil, "", ""
-}
 
 /*
 Lookup return the partial match of the current node and the match in the tree so far
 */
-func (t *Tree) Lookup(n *node, s string) (nres *node, part, match string) {
+func (t *Tree) Lookup(i Node, s string) (nres Node, part, match string) {
+	n := i.GetNode()
 	log.Printf("Lookup: NODE<%+v> for '%s'\n", *n, s)
 	if s == "" {
 		return n, "", ""
 	}
-	for _, c := range n.Children {
+	for _, i := range n.Children {
+		c := i.GetNode()
 		log.Printf("\tchild %s", c.Edgename)
 		match = matchprefix(c.Edgename, s)
 		if match == "" {

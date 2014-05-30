@@ -57,11 +57,12 @@ func TestBug1(t *testing.T) {
 	if len(tree.Root.Children) != 1 {
 		t.Fatal("should have one child")
 	}
-	if tree.Root.Children[0].Edgename != "A" {
+	n := tree.Root.Children[0].GetNode()
+	if n.Edgename != "A" {
 		t.Fatal("should be A")
 	}
-	if len(tree.Root.Children[0].Children) != 2 {
-		t.Fatal("should have 2 Children of A, but we have", tree.Root.Children[0].Children)
+	if len(n.Children) != 2 {
+		t.Fatal("should have 2 Children of A, but we have", n.Children)
 	}
 }
 
@@ -76,11 +77,12 @@ func TestBug2(t *testing.T) {
 	if len(tree.Root.Children) != 1 {
 		t.Fatal("should have one child")
 	}
-	if tree.Root.Children[0].Edgename != "A" {
+	n := tree.Root.Children[0].GetNode()
+	if n.Edgename != "A" {
 		t.Fatal("should be A")
 	}
-	if len(tree.Root.Children[0].Children) != 3 {
-		t.Fatal("should have 3 Children of A, but we have", tree.Root.Children[0].Children)
+	if len(n.Children) != 3 {
+		t.Fatal("should have 3 Children of A, but we have", n.Children)
 	}
 }
 
@@ -108,20 +110,21 @@ Waterink`
 	if len(tree.Root.Children) != 1 {
 		t.Fatal("should have one child", tree.Root.Children)
 	}
-	if tree.Root.Children[0].Edgename != "Water" {
-		t.Fatal("should not be", tree.Root.Children[0].Edgename)
+	n := tree.Root.Children[0].GetNode()	
+	if n.Edgename != "Water" {
+		t.Fatal("should not be", n.Edgename)
 	}
-	if len(tree.Root.Children[0].Children) != 1 {
-		t.Fatal("wrong children count for", tree.Root.Children[0].Children)
+	if len(n.Children) != 1 {
+		t.Fatal("wrong children count for", n.Children)
 	}
-	if tree.Root.Children[0].Children[0].Children[1].Edgename != "g" {
-		t.Fatal("wrong edgename", tree.Root.Children[0].Children[0].Children[1].Edgename)
+	if tree.Root.Children[0].GetNode().Children[0].GetNode().Children[1].GetNode().Edgename != "g" {
+		t.Fatal("wrong edgename", tree.Root.Children[0].GetNode().Children[0].GetNode().Children[1].GetNode().Edgename)
 	}
-	if tree.Root.Children[0].Children[0].Children[0].Edgename != "k" {
-		t.Fatal("wrong edgename", tree.Root.Children[0].Children[0].Children[0].Edgename)
+	if tree.Root.Children[0].GetNode().Children[0].GetNode().Children[0].GetNode().Edgename != "k" {
+		t.Fatal("wrong edgename", tree.Root.Children[0].GetNode().Children[0].GetNode().Children[0].GetNode().Edgename)
 	}
-	if tree.Root.Children[0].Children[0].Children[1].Children[0].Edgename != "s" {
-		t.Fatal("wrong edgename", tree.Root.Children[0].Children[0].Children[1].Children[0].Edgename)
+	if tree.Root.Children[0].GetNode().Children[0].GetNode().Children[1].GetNode().Children[0].GetNode().Edgename != "s" {
+		t.Fatal("wrong edgename", tree.Root.Children[0].GetNode().Children[0].GetNode().Children[1].GetNode().Children[0].GetNode().Edgename)
 	}
 }
 
