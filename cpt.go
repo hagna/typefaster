@@ -124,7 +124,7 @@ func NewNode(value, edgename string, children []*node) *node {
 	return res
 }
 
-func (t *MemTree) Insert(root *node, k, v string) {
+func Insert(root *node, k, v string) {
 	log.Println("insert", k, v)
 	n, part, m := t.Lookup(root, k)
 	
