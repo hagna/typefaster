@@ -6,58 +6,58 @@ import (
 )
 
 func TestInsertDup(t *testing.T) {
-	tree := MemTree{NewNode("root", "", nil)}
-	tree.Insert(tree.Root, "T.AH.P", "top")
-	tree.Insert(tree.Root, "T.AH.P", "top")
-	if len(tree.Root.Children) > 1 {
+	tree := NewMemTree("root")
+	Insert(tree, "T.AH.P", "top")
+	Insert(tree, "T.AH.P", "top")
+	if len(tree.Root().Children) > 1 {
 		t.Fatal("should only be one child")
 	}
 }
 
 func TestInsert(t *testing.T) {
-	tree := MemTree{NewNode("root", "", nil)}
-	tree.Insert(tree.Root, "T.AH.P", "top")
-	tree.Insert(tree.Root, "T.AH.P.S", "tops")
-	tree.Print(tree.Root, "")
-	if len(tree.Root.Children) == 2 {
+	tree := NewMemTree("root")
+	Insert(tree, "T.AH.P", "top")
+	Insert(tree, "T.AH.P.S", "tops")
+	tree.Print(tree.Root(), "")
+	if len(tree.Root().Children) == 2 {
 		t.Fatal("should only two Children")
 	}
 }
 
 func TestInsertSplit(t *testing.T) {
-	tree := MemTree{NewNode("root", "", nil)}
-	tree.Insert(tree.Root, "T.AH.P", "top")
-	tree.Insert(tree.Root, "T.AH.T", "tot")
-	if len(tree.Root.Children) == 2 {
+	tree := NewMemTree("root")
+	Insert(tree, "T.AH.P", "top")
+	Insert(tree, "T.AH.T", "tot")
+	if len(tree.Root().Children) == 2 {
 		t.Fatal("should only two Children")
 	}
 }
 
 func TestInsertMore(t *testing.T) {
-	tree := MemTree{NewNode("root", "", nil)}
-	tree.Insert(tree.Root, "test", "top")
-	tree.Insert(tree.Root, "slow", "top")
-	tree.Insert(tree.Root, "water", "top")
-	tree.Insert(tree.Root, "slower", "top")
-	tree.Insert(tree.Root, "slowest", "top")
-	tree.Print(tree.Root, "")
-	if len(tree.Root.Children) == 2 {
+	tree := NewMemTree("root")
+	Insert(tree, "test", "top")
+	Insert(tree, "slow", "top")
+	Insert(tree, "water", "top")
+	Insert(tree, "slower", "top")
+	Insert(tree, "slowest", "top")
+	tree.Print(tree.Root(), "")
+	if len(tree.Root().Children) == 2 {
 		t.Fatal("should only two Children")
 	}
 
 }
 
 func TestBug1(t *testing.T) {
-	tree := MemTree{NewNode("root", "", nil)}
-	tree.Insert(tree.Root, "A", "top")
-	tree.Insert(tree.Root, "Alpha", "top")
-	tree.Insert(tree.Root, "Anaconda", "top")
-	tree.Insert(tree.Root, "Al", "top")
-	tree.Print(tree.Root, "")
-	if len(tree.Root.Children) != 1 {
+	tree := NewMemTree("root")
+	Insert(tree, "A", "top")
+	Insert(tree, "Alpha", "top")
+	Insert(tree, "Anaconda", "top")
+	Insert(tree, "Al", "top")
+	tree.Print(tree.Root(), "")
+	if len(tree.Root().Children) != 1 {
 		t.Fatal("should have one child")
 	}
-	n := tree.Root.Children[0]
+	n := tree.Root().Children[0]
 	if n.Edgename != "A" {
 		t.Fatal("should be A")
 	}
@@ -67,17 +67,17 @@ func TestBug1(t *testing.T) {
 }
 
 func TestBug2(t *testing.T) {
-	tree := MemTree{NewNode("root", "", nil)}
-	tree.Insert(tree.Root, "A", "top")
-	tree.Insert(tree.Root, "Alpha", "top")
+	tree := NewMemTree("root")
+	Insert(tree, "A", "top")
+	Insert(tree, "Alpha", "top")
 	// This next shouldn't be under Alpha
-	tree.Insert(tree.Root, "Aughat", "top")
-	tree.Insert(tree.Root, "Ao", "top")
-	tree.Print(tree.Root, "")
-	if len(tree.Root.Children) != 1 {
+	Insert(tree, "Aughat", "top")
+	Insert(tree, "Ao", "top")
+	tree.Print(tree.Root(), "")
+	if len(tree.Root().Children) != 1 {
 		t.Fatal("should have one child")
 	}
-	n := tree.Root.Children[0]
+	n := tree.Root().Children[0]
 	if n.Edgename != "A" {
 		t.Fatal("should be A")
 	}
@@ -87,8 +87,8 @@ func TestBug2(t *testing.T) {
 }
 
 func isFound(s string, tree MemTree, t *testing.T) {
-	_, _, c := tree.Lookup(tree.Root, s)
-	tree.Print(tree.Root, "")
+	_, _, c := tree.Lookup(tree.Root(), s)
+	tree.Print(tree.Root(), "")
 	if c != s {
 		t.Fatal("didn't find word", s, "but found", c)
 	}
@@ -100,31 +100,31 @@ Watering
 Waterings
 Waterink`
 	s := strings.Split(l, "\n")
-	tree := MemTree{NewNode("root", "", nil)}
+	tree := NewMemTree("root")
 	for _, v := range s {
-		tree.Insert(tree.Root, v, "")
+		Insert(tree, v, "")
 	}
 	for _, v := range s {
-		isFound(v, tree, t)
+		isFound(v, *tree, t)
 	}
-	if len(tree.Root.Children) != 1 {
-		t.Fatal("should have one child", tree.Root.Children)
+	if len(tree.Root().Children) != 1 {
+		t.Fatal("should have one child", tree.Root().Children)
 	}
-	n := tree.Root.Children[0]	
+	n := tree.Root().Children[0]	
 	if n.Edgename != "Water" {
 		t.Fatal("should not be", n.Edgename)
 	}
 	if len(n.Children) != 1 {
 		t.Fatal("wrong children count for", n.Children)
 	}
-	if tree.Root.Children[0].Children[0].Children[1].Edgename != "g" {
-		t.Fatal("wrong edgename", tree.Root.Children[0].Children[0].Children[1].Edgename)
+	if tree.Root().Children[0].Children[0].Children[1].Edgename != "g" {
+		t.Fatal("wrong edgename", tree.Root().Children[0].Children[0].Children[1].Edgename)
 	}
-	if tree.Root.Children[0].Children[0].Children[0].Edgename != "k" {
-		t.Fatal("wrong edgename", tree.Root.Children[0].Children[0].Children[0].Edgename)
+	if tree.Root().Children[0].Children[0].Children[0].Edgename != "k" {
+		t.Fatal("wrong edgename", tree.Root().Children[0].Children[0].Children[0].Edgename)
 	}
-	if tree.Root.Children[0].Children[0].Children[1].Children[0].Edgename != "s" {
-		t.Fatal("wrong edgename", tree.Root.Children[0].Children[0].Children[1].Children[0].Edgename)
+	if tree.Root().Children[0].Children[0].Children[1].Children[0].Edgename != "s" {
+		t.Fatal("wrong edgename", tree.Root().Children[0].Children[0].Children[1].Children[0].Edgename)
 	}
 }
 
@@ -143,12 +143,12 @@ abstractions
 abstracts
 abstruse`
 	s := strings.Split(l, "\n")
-	tree := MemTree{NewNode("root", "", nil)}
+	tree := NewMemTree("root")
 	for _, v := range s {
-		tree.Insert(tree.Root, v, "")
+		Insert(tree, v, "")
 	}
-	_, _, c := tree.Lookup(tree.Root, "abstention")
-	tree.Print(tree.Root, "")
+	_, _, c := tree.Lookup(tree.Root(), "abstention")
+	tree.Print(tree.Root(), "")
 	if c != "abstention" {
 		t.Fatal("didn't find word but found", c)
 	}
@@ -162,12 +162,12 @@ aardvark
 aaron
 `
 	s := strings.Split(l, "\n")
-	tree := MemTree{NewNode("root", "", nil)}
+	tree := NewMemTree("root")
 	for _, v := range s {
-		tree.Insert(tree.Root, v, "")
+		Insert(tree, v, "")
 	}
-	_, _, c := tree.Lookup(tree.Root, "aardvark")
-	tree.Print(tree.Root, "")
+	_, _, c := tree.Lookup(tree.Root(), "aardvark")
+	tree.Print(tree.Root(), "")
 	if c != "aardvark" {
 		t.Fatal("didn't find word but found", c)
 	}
@@ -188,16 +188,16 @@ abstractions
 abstracts
 abstruse`
 	s := strings.Split(l, "\n")
-	tree := MemTree{NewNode("root", "", nil)}
+	tree := NewMemTree("root")
 	for _, v := range s {
-		tree.Insert(tree.Root, v, "")
+		Insert(tree, v, "")
 	}
 	called := 0
 	callme := func(k, v []string) {
 		t.Log(k)
 		called += len(k)
 	}
-	tree.mkdir(tree.Root, []string{"root"}, callme)
+	tree.mkdir(tree.Root(), []string{"root"}, callme)
 	x := 41
 	if x != called {
 		t.Fatal("called", called, "times but should have been", x)

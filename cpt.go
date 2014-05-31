@@ -13,20 +13,40 @@ type node struct {
 	Children []*node
 }
 
-
 type Tree interface {
-	Splitnode(n, l, r *node)
-	Addnode(*node)
-	Lookup(*node, string) (*node, string, string) 
+	NewNode(value, edgename string, children []*node) *node 
+	Root() *node 
+	Splitnode(n, l, r *node)  // new, left, right are the args
+	Addnode(parent, newchild *node)
+	// c is the closest node
+	// p is the partial match on that node
+	// m is the match in the tree so far
+	Lookup(parent *node, searchfor string) (c *node, p, m string) 
 	String() string
 }
 
 type MemTree struct {
-	Root *node
+	root *node
+}
+
+func (m MemTree) Root() *node {
+	return m.root
+}
+
+func (m MemTree) Splitnode(n, l, r *node) {
+}
+
+func (m MemTree) Addnode(root, n *node) {
+}
+
+func (m MemTree) String() string {
+	return fmt.Sprintf("%+v", m)
 }
 
 func NewMemTree(rootval string) *MemTree {
-	return &MemTree{NewNode("root", "", nil)}
+	i := new(MemTree)
+	i.root = i.NewNode("root", "", nil)
+	return i
 }
 
 // depth first search 
@@ -113,7 +133,7 @@ func wellFormed(part, match, edgename, k string) bool {
 }
 
 
-func NewNode(value, edgename string, children []*node) *node {
+func (t MemTree) NewNode(value, edgename string, children []*node) *node {
 	v := []string{}
 	if value != "" {
 		v = append(v, value)
@@ -124,13 +144,14 @@ func NewNode(value, edgename string, children []*node) *node {
 	return res
 }
 
-func Insert(root *node, k, v string) {
+func Insert(t Tree, k, v string) {
 	log.Println("insert", k, v)
+	root := t.Root()
 	n, part, m := t.Lookup(root, k)
 	
 	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
-		newnode := NewNode(v, k, nil)
+		newnode := t.NewNode(v, k, nil)
 		log.Println("add child", newnode)
 		root.Children = append(root.Children, newnode)
 		return
@@ -142,8 +163,11 @@ func Insert(root *node, k, v string) {
 		} else {
 			nk := k[len(m):]
 			if len(nk) > 0 {
-				newnode := NewNode(v, nk, nil)
+				newnode := t.NewNode(v, nk, nil)
+				t.Addnode(n, newnode)
+				/*
 				n.Children = append(n.Children, newnode)
+*/
 				log.Println("add child (simple)", newnode)
 			} else {
 				n.Value = append(n.Value, v)
@@ -159,9 +183,9 @@ func Insert(root *node, k, v string) {
 
 	mp := part
 	nk := k[len(m):]
-	newnodeA := NewNode(v, nk, nil)
+	newnodeA := t.NewNode(v, nk, nil)
 	rnk := n.Edgename[len(mp):]
-	newnodeB := NewNode("", rnk, n.Children) 
+	newnodeB := t.NewNode("", rnk, n.Children) 
 	newnodeB.Value = n.Value
 	
 	n.Edgename = mp
@@ -202,7 +226,7 @@ func matchprefix(a, b string) string {
 /*
 Lookup return the partial match of the current node and the match in the tree so far
 */
-func (t *MemTree) Lookup(n *node, s string) (nres *node, part, match string) {
+func (t MemTree) Lookup(n *node, s string) (nres *node, part, match string) {
 	log.Printf("Lookup: NODE<%+v> for '%s'\n", *n, s)
 	if s == "" {
 		return n, "", ""
