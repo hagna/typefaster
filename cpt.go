@@ -7,6 +7,47 @@ import (
 	"os"
 )
 
+/*
+I want a data structure that is good for storing lots of strings of phonemes
+with their corresponding english word(s), for example meat and meet are two
+spellings of one phoneme string (M.IY.T in this case).  The structure ought to
+not only store a lot of phoneme strings (more than you'd care to leave in
+memory), but also make it fast to translate M.IY.T into meet or meat.
+
+But why?  Because I've got plenty of pronunciation data, and I have a phonetic
+system for typing that is easy to learn.  I just need to translate the sequence
+of phonemes to words.
+
+And how?
+
+Using a compact prefix tree stored on the disk.  Each node is a filename in the
+directory structure that will look like this:
+root/
+	e0/
+		e018f5434:
+			{
+			"phonemes": "M.IY.T"
+			"value":["meat","meet"],
+			"children":["d8774efef"]
+			"parent":["fe88bdbc7"]
+			}
+		e09898342:
+			...
+	d8/
+		d8342ffee:
+			...
+		d8eeff332:
+			...
+		d8774efef:
+			{
+			"value":["meeting"],
+			"children":["38528ef5b"]
+			"parent":["d8774efef"]
+			}
+
+
+*/
+
 type node struct {
 	Value    []string
 	Edgename string
@@ -36,7 +77,8 @@ func (m MemTree) Root() *node {
 func (m MemTree) Splitnode(n, l, r *node) {
 }
 
-func (m MemTree) Addnode(root, n *node) {
+func (m MemTree) Addnode(parent, newnode *node) {
+	parent.Children = append(parent.Children, newnode)
 }
 
 func (m MemTree) String() string {
@@ -154,6 +196,7 @@ func Insert(t Tree, k, v string) {
 		newnode := t.NewNode(v, k, nil)
 		log.Println("add child", newnode)
 		root.Children = append(root.Children, newnode)
+		t.Write(root)
 		return
 	}
 	if n.Edgename == part || n.Edgename == m {
@@ -164,15 +207,13 @@ func Insert(t Tree, k, v string) {
 			nk := k[len(m):]
 			if len(nk) > 0 {
 				newnode := t.NewNode(v, nk, nil)
-				t.Addnode(n, newnode)
-				/*
 				n.Children = append(n.Children, newnode)
-*/
 				log.Println("add child (simple)", newnode)
 			} else {
 				n.Value = append(n.Value, v)
 				log.Println("node exists already")
 			}
+			t.Write(n)
 			return
 		}
 	}
@@ -195,6 +236,7 @@ func Insert(t Tree, k, v string) {
 	n.Children = append(n.Children, newnodeB)
 	log.Println("add child (split a)", newnodeA)
 	log.Println("add child (split b)", newnodeB)
+	t.Write(n)
 
 }
 
