@@ -67,7 +67,7 @@ func Maketree(iphod string) (*MemTree, error) {
 	tree := NewMemTree("root")
 	cb := func(word, phonemes string, nphones int) {
 		phonemes = encode(phonemes)
-		Insert(tree, phonemes, word)
+		tree.Insert(phonemes, word)
 	}
 	err := readiphod(iphod, cb)
 	if err != nil {
