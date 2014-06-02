@@ -223,21 +223,15 @@ func (t MemTree) Insert(k, v string) {
 // returns the matching prefix between the two
 func matchprefix(a, b string) string {
 	res := ""
-	if len(a) < len(b) {
-		for i, c := range a {
-			if a[i] == b[i] {
-				res += string(c)
-			} else {
-				break
-			}
-		}
-	} else {
-		for i, c := range b {
-			if b[i] == a[i] {
-				res += string(c)
-			} else {
-				break
-			}
+	smallest := len(a)
+	if smallest > len(b) {
+		smallest = len(b)
+	}
+	for i:=0; i<smallest; i++ {
+		if a[i] == b[i] {
+			res += string(a[i])
+		} else {
+			break
 		}
 	}
 	return res
