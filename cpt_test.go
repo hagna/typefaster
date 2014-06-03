@@ -3,6 +3,7 @@ package typefaster
 import (
 	"strings"
 	"testing"
+	"encoding/json"
 )
 
 func TestInsertDup(t *testing.T) {
@@ -213,4 +214,41 @@ func TestEncodeDecode(t *testing.T) {
 		
 	}
 }
+	
+func TestDiskNodeJson(t *testing.T) {
+	m := make(map[string]string)
+	m["a"] = "b"
+	s := disknode{"key", []string{"val1", "val2"}, m, "parent", "edgename", "hash"}
+	b, err := json.Marshal(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := new(disknode)
+	err = json.Unmarshal(b, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Key != s.Key {
+		t.Fatal("not the same decoded json", c, b)
+	}
+	if c.Value[0] != s.Value[0] {
+		t.Fatal("not the same decoded json", c, b)
+	}
+	if c.Value[1] != s.Value[1] {
+		t.Fatal("not the same decoded json", c, b)
+	}
+	if c.Children["a"] != s.Children["a"] {
+		t.Fatal("not the same decoded json", c, b)
+	}
+	if c.Parent != s.Parent {
+		t.Fatal("not the same decoded json", c, b)
+	}
+	if c.Edgename != s.Edgename {
+		t.Fatal("not the same decoded json", c, b)
+	}
+	if c.Hash != s.Hash {
+		t.Fatal("not the same decoded json", c, b)
+	}
+
+}	
 	

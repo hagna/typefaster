@@ -26,7 +26,7 @@ root/
 	e0/
 		e018f5434:
 			{
-			"phonemes": "M.IY.T"
+			"key": "M.IY.T"
 			"value":["meat","meet"],
 			"children":["d8774efef"]
 			"parent":["fe88bdbc7"]
@@ -40,6 +40,7 @@ root/
 			...
 		d8774efef:
 			{
+			"key": "M.IY.T.IH.NG"
 			"value":["meeting"],
 			"children":["38528ef5b"]
 			"parent":["d8774efef"]
@@ -48,10 +49,21 @@ root/
 
 */
 
+/* a node in the compact prefix tree */
 type node struct {
 	Value    []string
 	Edgename string
 	Children []*node
+}
+
+/* a node in the compact prefix tree stored on disk */
+type disknode struct {
+	Key string	`json:"key"`
+	Value []string  `json:"value"`
+	Children map[string]string `json:"children"`
+	Parent string	`json:"parent"`
+	Edgename string `json:"edgename"`
+	Hash string	`json:"hash"`
 }
 
 type Tree interface {
