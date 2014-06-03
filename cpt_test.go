@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 	"encoding/json"
+	"os"
 )
 
 func TestInsertDup(t *testing.T) {
@@ -250,5 +251,18 @@ func TestDiskNodeJson(t *testing.T) {
 		t.Fatal("not the same decoded json", c, b)
 	}
 
-}	
+}
+
+func foundFile(s string, t *testing.T) {
+	if _, err := os.Stat(s); os.IsNotExist(err) {
+		t.Fatal("Bad command or filename", s)
+	}
+}
+
+func TestDiskNode1(t *testing.T) {
+	dirname := "root"
+	s := NewDiskTree(dirname)
+	s.Insert("key", "value")
+	foundFile(dirname + "/" + hashit("key"), t)
+}
 	

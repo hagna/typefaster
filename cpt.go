@@ -51,9 +51,11 @@ root/
 
 /* a node in the compact prefix tree */
 type node struct {
+	Key	string
 	Value    []string
-	Edgename string
 	Children []*node
+	Parent	*node
+	Edgename string
 }
 
 /* a node in the compact prefix tree stored on disk */
@@ -76,6 +78,11 @@ type MemTree struct {
 	root *node
 }
 
+type DiskTree struct {
+	root *disknode
+	path string
+}
+
 func (m MemTree) String() string {
 	return fmt.Sprintf("%+v", m)
 }
@@ -84,6 +91,17 @@ func NewMemTree(rootval string) *MemTree {
 	i := new(MemTree)
 	i.root = NewNode("root", "", nil)
 	return i
+}
+
+func NewDiskTree(dirname string) *DiskTree {
+	return new(DiskTree)
+}
+
+func hashit(s string) string {
+	return ""
+}
+
+func (t *DiskTree) Insert(k, v string) {
 }
 
 // depth first search 
@@ -177,7 +195,7 @@ func NewNode(value, edgename string, children []*node) *node {
 	}
 	log.Println("NewNode: value is", v, len(v))
 	log.Println("NewNode: edgename", edgename)
-	res := &node{v, edgename, children}
+	res := &node{"", v, children, nil, edgename}
 	return res
 }
 
