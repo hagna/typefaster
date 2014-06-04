@@ -255,14 +255,19 @@ func TestDiskNodeJson(t *testing.T) {
 
 func foundFile(s string, t *testing.T) {
 	if _, err := os.Stat(s); os.IsNotExist(err) {
-		t.Fatal("Bad command or filename", s)
-	}
+		t.Fatal("failed to find file", s)
+	} 
 }
 
 func TestDiskNode1(t *testing.T) {
 	dirname := "root"
+	defer os.RemoveAll(dirname)
 	s := NewDiskTree(dirname)
 	s.Insert("key", "value")
 	foundFile(dirname + "/" + hashit("key"), t)
+	_, _, c := s.Lookup(nil, "key")
+	if c != "key" {
+		t.Fatal("did not find it", "key", "found", c)
+	}
 }
 	

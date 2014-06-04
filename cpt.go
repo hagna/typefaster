@@ -2,9 +2,13 @@ package typefaster
 
 import (
 	"fmt"
+	"crypto/md5"
+	"io"
 	"log"
 	"strings"
 	"os"
+	"io/ioutil"
+	"encoding/json"
 )
 
 /*
@@ -94,14 +98,123 @@ func NewMemTree(rootval string) *MemTree {
 }
 
 func NewDiskTree(dirname string) *DiskTree {
-	return new(DiskTree)
+	err := os.MkdirAll(dirname, 0777)
+	if err != nil {
+		log.Println(err)
+	}
+	res := new(DiskTree)
+	res.root = new(disknode)
+	res.root.Children = make(map[string]string)
+	res.path = dirname
+	return res
 }
 
 func hashit(s string) string {
-	return ""
+	h := md5.New()
+	io.WriteString(h, s)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func (t *DiskTree) Insert(k, v string) {
+	log.Println("insert", k, v)
+	root := t.root.toMem()
+	n, part, m := t.Lookup(root, k)
+
+	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
+	if n == nil {
+		root := t.root
+		newnode := new(disknode) 
+		newnode.Value = []string{v}
+		newnode.Edgename = k
+		newnode.Key = k
+		newnode.Hash = hashit(k)
+		newnode.Parent = root.Hash
+		root.Children[string(k[0])] = newnode.Hash
+		log.Printf("add disk child %+v\n", newnode)
+		t.write(root)
+		t.write(newnode)
+		return
+	}
+}
+
+func (n *disknode) toMem() *node {
+	if n == nil {
+		return nil
+	}
+	res := NewNode("", n.Edgename, nil)
+	res.Value = n.Value
+	return res
+}
+
+func (t *DiskTree) write(a *disknode) {
+}
+
+func (t *DiskTree) dnodeFromNode(n *node) *disknode {
+	dn := new(disknode)
+	dat, err := ioutil.ReadFile(t.path + "/" + hashit(n.Key))
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	err = json.Unmarshal(dat, dn)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	return dn
+}
+
+func dnodeFromHash(s string) *disknode {
+	return new(disknode)
+}
+
+func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
+	m := ""
+	// it is only nil if we're searching from root
+	if n != nil {
+		if search == n.Key {
+			return n, "", n.Key
+		}
+		m = matchprefix(n.Edgename, search)
+		if m == "" {
+			log.Println("node", n, "has no prefix in common with", search)
+			return nil, "", ""
+		}
+		// partial match
+		if len(m) < len(n.Edgename) {
+			log.Println("partial match", n, m)
+			return n, "", m
+		}
+	}
+ 	if len(m) < len(search) {
+		rest := search[len(m):]
+		if n == nil {
+			n = new(node)
+			n.Key = t.path + "root"
+		}
+		dn := t.dnodeFromNode(n)
+		if dn != nil {
+			// maybe later you'll have the courage to make this map uint8
+			// keys instead of string
+			if chash, ok := dn.Children[string(rest[0])]; ok {
+				d := dnodeFromHash(chash)
+				s := d.toMem()
+				log.Println("recurse on", rest, "with child", s)
+				nm, m2, p := t.Lookup(s, rest)
+				m += m2
+				if p == "" {
+					p = m2
+				}
+				if nm == nil {
+					log.Println("didn't find it in the child", s)
+					return s, p, m
+				}
+				return nm, p, m
+			}
+		}
+	}	
+	log.Println("returning nil because no case matched")
+	return nil, "", ""
 }
 
 // depth first search 
