@@ -271,3 +271,14 @@ func TestDiskNode1(t *testing.T) {
 	}
 }
 	
+func TestDiskNodeSimple(t *testing.T) {
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	s := NewDiskTree(dirname)
+	s.Insert("key", "value")
+	s.Insert("keys", "value")
+	_, _, c := s.Lookup(nil, "keys")
+	if c != "keys" {
+		t.Fatal("did not find it", "key", "found", c)
+	}
+}

@@ -108,6 +108,7 @@ func NewDiskTree(dirname string) *DiskTree {
 	res.root.Key = dirname
 	res.root.Hash = smash(dirname)
 	res.path = dirname
+	res.write(res.root)
 	return res
 }
 
@@ -120,8 +121,7 @@ func smash(s string) string {
 
 func (t *DiskTree) Insert(k, v string) {
 	log.Println("insert", k, v)
-	root := t.root.toMem()
-	n, part, m := t.Lookup(root, k)
+	n, part, m := t.Lookup(nil, k)
 
 	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
@@ -138,6 +138,23 @@ func (t *DiskTree) Insert(k, v string) {
 		t.write(newnode)
 		return
 	}
+	if n.Edgename == part || n.Edgename == m {
+		if !wellFormed(part, m, n.Edgename, k) {
+			log.Println("would not be well formed")
+		} else {
+			nk := k[len(m):]
+			if len(nk) > 0 {
+				newnode := NewNode(v, nk, nil)
+				n.Children = append(n.Children, newnode)
+				log.Println("add child (simple)", newnode)
+			} else {
+				n.Value = append(n.Value, v)
+				log.Println("node exists already")
+			}
+			return
+		}
+	}
+
 }
 
 func (n *disknode) toMem() *node {
@@ -191,8 +208,8 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 		if search == n.Key {
 			return n, "", n.Key
 		}
-		log.Println("matchprefix(",n.Edgename, search, ")")
 		m = matchprefix(n.Edgename, search)
+		log.Println("matchprefix(",n.Edgename, search, ") ->", m)
 		if m == "" {
 			log.Println("node", n, "has no prefix in common with", search)
 			return nil, "", ""
@@ -203,12 +220,14 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 			return n, "", m
 		}
 	}
+	log.Println("len(m) < len(search)", len(m), len(search))
  	if len(m) < len(search) {
 		rest := search[len(m):]
 		if n == nil {
 			n = new(node)
 			n.Key = t.root.Key
 		}
+		log.Printf("looking for \"%s\" in children of %+v\n", rest, n)
 		dn := t.dnodeFromNode(n)
 		if dn != nil {
 			// maybe later you'll have the courage to make this map uint8
@@ -216,17 +235,19 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 			if chash, ok := dn.Children[string(rest[0])]; ok {
 				d := t.dnodeFromHash(chash)
 				s := d.toMem()
-				log.Printf("recurse on \"%s\" with child %+v", rest, s)
+				log.Printf("recurse on \"%s\" with child %+v match so far is \"%s\"\n", rest, s, m)
 				nm, p, m2 := t.Lookup(s, rest)
 				m += m2
-				if p == "" {
-					p = m2
-				}
+				log.Printf("adding \"%s\" to m to make \"%s\"\n", m2, m)
 				if nm == nil {
-					log.Println("didn't find it in the child", s)
+					log.Printf("partial match will return %+v \"%s\" \"%s\"", s, p, m)
 					return s, p, m
 				}
 				return nm, p, m
+			}
+			if len(m) != 0 {
+			log.Printf("no children returning partial match instead %+v \"%s\" \"%s\"\n", n, "", m)
+			return n, "", m  
 			}
 		}
 	}	
