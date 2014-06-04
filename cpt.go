@@ -105,11 +105,14 @@ func NewDiskTree(dirname string) *DiskTree {
 	res := new(DiskTree)
 	res.root = new(disknode)
 	res.root.Children = make(map[string]string)
+	res.root.Key = dirname
+	res.root.Hash = smash(dirname)
 	res.path = dirname
 	return res
 }
 
-func hashit(s string) string {
+// allusion to Schneier's description of a one-way hash function
+func smash(s string) string {
 	h := md5.New()
 	io.WriteString(h, s)
 	return fmt.Sprintf("%x", h.Sum(nil))
@@ -127,7 +130,7 @@ func (t *DiskTree) Insert(k, v string) {
 		newnode.Value = []string{v}
 		newnode.Edgename = k
 		newnode.Key = k
-		newnode.Hash = hashit(k)
+		newnode.Hash = smash(k)
 		newnode.Parent = root.Hash
 		root.Children[string(k[0])] = newnode.Hash
 		log.Printf("add disk child %+v\n", newnode)
@@ -143,15 +146,31 @@ func (n *disknode) toMem() *node {
 	}
 	res := NewNode("", n.Edgename, nil)
 	res.Value = n.Value
+	res.Key = n.Key
 	return res
 }
 
 func (t *DiskTree) write(a *disknode) {
+	dat, err := json.Marshal(a)
+	if err != nil {
+		log.Println(err)
+	}
+	fname := t.path + "/" + a.Hash
+	log.Println("writing", string(dat), "to", fname)
+	err = ioutil.WriteFile(fname, dat, 0666)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (t *DiskTree) dnodeFromNode(n *node) *disknode {
+	dn := t.dnodeFromHash(smash(n.Key))
+	return dn
+}
+
+func (t *DiskTree) dnodeFromHash(s string) *disknode {
 	dn := new(disknode)
-	dat, err := ioutil.ReadFile(t.path + "/" + hashit(n.Key))
+	dat, err := ioutil.ReadFile(t.path + "/" + s)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -164,17 +183,15 @@ func (t *DiskTree) dnodeFromNode(n *node) *disknode {
 	return dn
 }
 
-func dnodeFromHash(s string) *disknode {
-	return new(disknode)
-}
-
 func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 	m := ""
+	log.Println("Lookup node", n, "search for", search)
 	// it is only nil if we're searching from root
 	if n != nil {
 		if search == n.Key {
 			return n, "", n.Key
 		}
+		log.Println("matchprefix(",n.Edgename, search, ")")
 		m = matchprefix(n.Edgename, search)
 		if m == "" {
 			log.Println("node", n, "has no prefix in common with", search)
@@ -190,17 +207,17 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 		rest := search[len(m):]
 		if n == nil {
 			n = new(node)
-			n.Key = t.path + "root"
+			n.Key = t.root.Key
 		}
 		dn := t.dnodeFromNode(n)
 		if dn != nil {
 			// maybe later you'll have the courage to make this map uint8
 			// keys instead of string
 			if chash, ok := dn.Children[string(rest[0])]; ok {
-				d := dnodeFromHash(chash)
+				d := t.dnodeFromHash(chash)
 				s := d.toMem()
-				log.Println("recurse on", rest, "with child", s)
-				nm, m2, p := t.Lookup(s, rest)
+				log.Printf("recurse on \"%s\" with child %+v", rest, s)
+				nm, p, m2 := t.Lookup(s, rest)
 				m += m2
 				if p == "" {
 					p = m2
