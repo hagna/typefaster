@@ -1,14 +1,14 @@
 package typefaster
 
 import (
-	"fmt"
 	"crypto/md5"
-	"io"
-	"log"
-	"strings"
-	"os"
-	"io/ioutil"
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
 )
 
 /*
@@ -55,26 +55,26 @@ root/
 
 /* a node in the compact prefix tree */
 type node struct {
-	Key	string
+	Key      string
 	Value    []string
 	Children []*node
-	Parent	*node
+	Parent   *node
 	Edgename string
 }
 
 /* a node in the compact prefix tree stored on disk */
 type disknode struct {
-	Key string	`json:"key"`
-	Value []string  `json:"value"`
+	Key      string            `json:"key"`
+	Value    []string          `json:"value"`
 	Children map[string]string `json:"children"`
-	Parent string	`json:"parent"`
-	Edgename string `json:"edgename"`
-	Hash string	`json:"hash"`
+	Parent   string            `json:"parent"`
+	Edgename string            `json:"edgename"`
+	Hash     string            `json:"hash"`
 }
 
 type Tree interface {
 	Insert(key, value string)
-	Lookup(parent *node, searchfor string) (c *node, p, m string) 
+	Lookup(parent *node, searchfor string) (c *node, p, m string)
 	String() string
 }
 
@@ -119,11 +119,11 @@ func smash(s string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-/* 
+/*
 creates new child and writes it to disk along with the parent
 */
 func (t *DiskTree) addChild(root *disknode, edgename, key string, value []string) {
-	newnode := new(disknode) 
+	newnode := new(disknode)
 	newnode.Value = value
 	newnode.Edgename = edgename
 	newnode.Key = key
@@ -153,7 +153,7 @@ func (t *DiskTree) Insert(k, v string) {
 		} else {
 			nk := k[len(m):]
 			if len(nk) > 0 {
-				t.addChild(t.dnodeFromNode(n), nk, k, []string{v})	
+				t.addChild(t.dnodeFromNode(n), nk, k, []string{v})
 			} else {
 				n.Value = append(n.Value, v)
 				log.Println("node exists already")
@@ -216,7 +216,7 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 			return n, "", n.Key
 		}
 		m = matchprefix(n.Edgename, search)
-		log.Println("matchprefix(",n.Edgename, search, ") ->", m)
+		log.Println("matchprefix(", n.Edgename, search, ") ->", m)
 		if m == "" {
 			log.Println("node", n, "has no prefix in common with", search)
 			return nil, "", ""
@@ -228,7 +228,7 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 		}
 	}
 	log.Println("len(m) < len(search)", len(m), len(search))
- 	if len(m) < len(search) {
+	if len(m) < len(search) {
 		rest := search[len(m):]
 		if n == nil {
 			n = new(node)
@@ -253,20 +253,20 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 				return nm, p, m
 			}
 			if len(m) != 0 {
-			log.Printf("no children returning partial match instead %+v \"%s\" \"%s\"\n", n, "", m)
-			return n, "", m  
-			}
-		}
-	}	
-
-			if len(m) == len(search) {
+				log.Printf("no children returning partial match instead %+v \"%s\" \"%s\"\n", n, "", m)
 				return n, "", m
 			}
+		}
+	}
+
+	if len(m) == len(search) {
+		return n, "", m
+	}
 	log.Println("returning nil because no case matched")
 	return nil, "", ""
 }
 
-// depth first search 
+// depth first search
 func (t *MemTree) Print(n *node, prefix string) {
 	if len(n.Children) == 0 {
 		fmt.Println(prefix, n.Value)
@@ -282,7 +282,7 @@ func (t *MemTree) Print(n *node, prefix string) {
 }
 
 func (t *MemTree) Mkdir(n *node, prefix []string) {
-	cb :=  func(key, value []string) {
+	cb := func(key, value []string) {
 		res := []string{}
 		// skip first no encoded root
 		for _, v := range key[1:] {
@@ -349,7 +349,6 @@ func wellFormed(part, match, edgename, k string) bool {
 	return res
 }
 
-
 func NewNode(value, edgename string, children []*node) *node {
 	v := []string{}
 	if value != "" {
@@ -365,7 +364,7 @@ func (t MemTree) Insert(k, v string) {
 	log.Println("insert", k, v)
 	root := t.root
 	n, part, m := t.Lookup(root, k)
-	
+
 	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
 		newnode := NewNode(v, k, nil)
@@ -399,9 +398,9 @@ func (t MemTree) Insert(k, v string) {
 	nk := k[len(m):]
 	newnodeA := NewNode(v, nk, nil)
 	rnk := n.Edgename[len(mp):]
-	newnodeB := NewNode("", rnk, n.Children) 
+	newnodeB := NewNode("", rnk, n.Children)
 	newnodeB.Value = n.Value
-	
+
 	n.Edgename = mp
 	n.Value = []string{}
 	n.Children = nil
@@ -419,7 +418,7 @@ func matchprefix(a, b string) string {
 	if smallest > len(b) {
 		smallest = len(b)
 	}
-	for i:=0; i<smallest; i++ {
+	for i := 0; i < smallest; i++ {
 		if a[i] == b[i] {
 			res += string(a[i])
 		} else {
@@ -428,8 +427,6 @@ func matchprefix(a, b string) string {
 	}
 	return res
 }
-
-
 
 /*
 Lookup return the partial match of the current node and the match in the tree so far

@@ -1,10 +1,10 @@
 package typefaster
 
 import (
-	"strings"
-	"testing"
 	"encoding/json"
 	"os"
+	"strings"
+	"testing"
 )
 
 func TestInsertDup(t *testing.T) {
@@ -112,7 +112,7 @@ Waterink`
 	if len(tree.root.Children) != 1 {
 		t.Fatal("should have one child", tree.root.Children)
 	}
-	n := tree.root.Children[0]	
+	n := tree.root.Children[0]
 	if n.Edgename != "Water" {
 		t.Fatal("should not be", n.Edgename)
 	}
@@ -212,10 +212,10 @@ func TestEncodeDecode(t *testing.T) {
 		t.Log("encoded == ", encode(s))
 		t.Log("decoded == ", decode(encode(s)))
 		t.Fatal("failed to decode the encoded string")
-		
+
 	}
 }
-	
+
 func TestDiskNodeJson(t *testing.T) {
 	m := make(map[string]string)
 	m["a"] = "b"
@@ -256,7 +256,7 @@ func TestDiskNodeJson(t *testing.T) {
 func foundFile(s string, t *testing.T) {
 	if _, err := os.Stat(s); os.IsNotExist(err) {
 		t.Fatal("failed to find file", s)
-	} 
+	}
 }
 
 func TestDiskNode1(t *testing.T) {
@@ -264,13 +264,13 @@ func TestDiskNode1(t *testing.T) {
 	defer os.RemoveAll(dirname)
 	s := NewDiskTree(dirname)
 	s.Insert("key", "value")
-	foundFile(dirname + "/" + smash("key"), t)
+	foundFile(dirname+"/"+smash("key"), t)
 	_, _, c := s.Lookup(nil, "key")
 	if c != "key" {
 		t.Fatal("did not find it", "key", "found", c)
 	}
 }
-	
+
 func TestDiskNodeSimple(t *testing.T) {
 	dirname := "root"
 	defer os.RemoveAll(dirname)
@@ -281,5 +281,5 @@ func TestDiskNodeSimple(t *testing.T) {
 	if c != "keys" {
 		t.Fatal("did not find it found", c)
 	}
-	foundFile(dirname + "/" + smash("keys"), t)
+	foundFile(dirname+"/"+smash("keys"), t)
 }

@@ -3,7 +3,7 @@ package typefaster
 const (
 	// consonants
 	/* 24 of them, 12 from the set without using the thumb
-	   12 more from the set that uses 1 
+	   12 more from the set that uses 1
 	*/
 	N  = 1 << 4
 	T  = 1 << 3
@@ -104,4 +104,3 @@ var Phones = map[uint8]Phone{
 	Z:  Phone{Cmu: "Z"},
 	ZH: Phone{Cmu: "ZH"},
 }
-
