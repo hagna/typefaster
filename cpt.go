@@ -212,11 +212,12 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 	log.Println("Lookup node", n, "search for", search)
 	// it is only nil if we're searching from root
 	if n != nil {
-		if search == n.Key {
-			return n, "", n.Key
-		}
+
 		m = matchprefix(n.Edgename, search)
 		log.Println("matchprefix(", n.Edgename, search, ") ->", m)
+		if len(m) == len(search) {
+			return n, "", m
+		}
 		if m == "" {
 			log.Println("node", n, "has no prefix in common with", search)
 			return nil, "", ""
@@ -259,9 +260,6 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 		}
 	}
 
-	if len(m) == len(search) {
-		return n, "", m
-	}
 	log.Println("returning nil because no case matched")
 	return nil, "", ""
 }
