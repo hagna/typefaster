@@ -119,23 +119,32 @@ func smash(s string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
+/* 
+creates new child and writes it to disk along with the parent
+*/
+func (t *DiskTree) addChild(root *disknode, edgename, key string, value []string) {
+	newnode := new(disknode) 
+	newnode.Value = value
+	newnode.Edgename = edgename
+	newnode.Key = key
+	newnode.Hash = smash(key)
+	newnode.Parent = root.Hash
+	if root.Children == nil {
+		root.Children = make(map[string]string)
+	}
+	root.Children[string(edgename[0])] = newnode.Hash
+	log.Printf("add disk child %+v\n", newnode)
+	t.write(root)
+	t.write(newnode)
+}
+
 func (t *DiskTree) Insert(k, v string) {
 	log.Println("insert", k, v)
 	n, part, m := t.Lookup(nil, k)
 
 	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
-		root := t.root
-		newnode := new(disknode) 
-		newnode.Value = []string{v}
-		newnode.Edgename = k
-		newnode.Key = k
-		newnode.Hash = smash(k)
-		newnode.Parent = root.Hash
-		root.Children[string(k[0])] = newnode.Hash
-		log.Printf("add disk child %+v\n", newnode)
-		t.write(root)
-		t.write(newnode)
+		t.addChild(t.root, k, k, []string{v})
 		return
 	}
 	if n.Edgename == part || n.Edgename == m {
@@ -144,9 +153,7 @@ func (t *DiskTree) Insert(k, v string) {
 		} else {
 			nk := k[len(m):]
 			if len(nk) > 0 {
-				newnode := NewNode(v, nk, nil)
-				n.Children = append(n.Children, newnode)
-				log.Println("add child (simple)", newnode)
+				t.addChild(t.dnodeFromNode(n), nk, k, []string{v})	
 			} else {
 				n.Value = append(n.Value, v)
 				log.Println("node exists already")
@@ -251,6 +258,10 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 			}
 		}
 	}	
+
+			if len(m) == len(search) {
+				return n, "", m
+			}
 	log.Println("returning nil because no case matched")
 	return nil, "", ""
 }

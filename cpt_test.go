@@ -276,9 +276,10 @@ func TestDiskNodeSimple(t *testing.T) {
 	defer os.RemoveAll(dirname)
 	s := NewDiskTree(dirname)
 	s.Insert("key", "value")
-	s.Insert("keys", "value")
+	s.Insert("keys", "v2")
 	_, _, c := s.Lookup(nil, "keys")
 	if c != "keys" {
-		t.Fatal("did not find it", "key", "found", c)
+		t.Fatal("did not find it found", c)
 	}
+	foundFile(dirname + "/" + smash("keys"), t)
 }
