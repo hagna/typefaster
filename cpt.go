@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
+	"runtime"
 )
 
 /*
@@ -100,7 +100,7 @@ func NewMemTree(rootval string) *MemTree {
 func NewDiskTree(dirname string) *DiskTree {
 	err := os.MkdirAll(dirname, 0777)
 	if err != nil {
-		log.Println(err)
+		debug(err)
 	}
 	res := new(DiskTree)
 	res.root = new(disknode)
@@ -133,47 +133,91 @@ func (t *DiskTree) addChild(root *disknode, edgename, key string, value []string
 		root.Children = make(map[string]string)
 	}
 	root.Children[string(edgename[0])] = newnode.Hash
-	log.Printf("add disk child %+v\n", newnode)
+	debugf("add disk child %+v\n", newnode)
 	t.write(root)
 	t.write(newnode)
 }
 
-func (t *DiskTree) Insert(k, v string) {
-	log.Println("insert", k, v)
-	n, part, m := t.Lookup(nil, k)
+func debug(i ...interface{}) {
+	var msg string
+	if _, fname, lineno, ok := runtime.Caller(1); !ok {
+		debug("couldn't get line number")
+	} else {
+		j := strings.LastIndex(fname, "/")
+		fname = fname[j+1:]
+		msg = fmt.Sprintf("%s:%d ", fname, lineno)
+	}
 
-	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
-	if n == nil {
+	fmt.Printf(msg)
+	fmt.Println(i...)
+}
+
+func debugf(format string, i ...interface{}) {
+	var msg string
+	if _, fname, lineno, ok := runtime.Caller(1); !ok {
+		debug("couldn't get line number")
+	} else {
+		j := strings.LastIndex(fname, "/")
+		fname = fname[j+1:]
+		msg = fmt.Sprintf("%s:%d ", fname, lineno)
+	}
+	fmt.Printf(msg + format, i...)
+}
+
+func (t *DiskTree) Insert(k, v string) {
+	debug("insert", k, v)
+	root := t.root.toMem()
+	n, i := t.Lookup(root, k, 0)
+	commonprefix := k[:i]
+	debug("Insert", k, "and commonprefix is", commonprefix)
+	
+	debugf("Lookup returns node '%+v' mathced chars = '%v' match '%v'\n", n, i, k[:i])
+
+	debug("is it the root?")
+	if n == root {
+		debug("addChild")
 		t.addChild(t.root, k, k, []string{v})
+		debug("yes")
 		return
 	}
-	if n.Edgename == part || n.Edgename == m {
-		if !wellFormed(part, m, n.Edgename, k) {
-			log.Println("would not be well formed")
-		} else {
-			nk := k[len(m):]
-			if len(nk) > 0 {
-				t.addChild(t.dnodeFromNode(n), nk, k, []string{v})
-			} else {
-				n.Value = append(n.Value, v)
-				log.Println("node exists already")
-			}
-			return
+	debug("no")
+
+	debug("is it a complete match?")
+	if k == n.Key {
+		debug("node", n, "already found append value here TODO")
+		debug("yes")
+		return
+	}
+	debug("no")
+
+	debug("does commonprefix consume the whole tree so far?")
+	// the best match matches the whole key (including n.Edgename)
+	if commonprefix == n.Key {
+		// but if it is longer than the key it's a simple add
+		if len(k) > len(n.Key) {
+			e := k[len(commonprefix):]
+			dn := t.dnodeFromNode(n)
+			t.addChild(dn, e, k, []string{v})
+			debug("yes")
+			return 
 		}
 	}
+	debug("no")
 
-	if part == "" {
-		part = m
-	}
+	// otherwise it's a split because it matches part of n.Edgename
+
+	debug("split them then")
 
 	/* say we have the string "key" and we add "ketones"
 	   then the left node will be "y" the right node will be "tones"
 	   and the middle will be "ke"
 	*/
+
 	mid := t.dnodeFromNode(n)
-	commonprefix := part
-	lname := n.Edgename[len(commonprefix):]
-	rname := k[len(m):] 
+	lname := n.Key[len(commonprefix):]
+	rname := k[len(commonprefix):] 
+
+	debug("into", lname, rname)
 
 	// left node (preserve the old string)
 	leftnode := new(disknode)
@@ -181,7 +225,6 @@ func (t *DiskTree) Insert(k, v string) {
 	leftnode.Edgename = lname
 	leftnode.Key = mid.Key
 	leftnode.Hash = mid.Hash
-	leftnode.Parent = mid.Parent
 	leftnode.Children = mid.Children
 
 	// right node (add the new string)
@@ -190,20 +233,28 @@ func (t *DiskTree) Insert(k, v string) {
 	rightnode.Edgename = rname
 	rightnode.Key = k
 	rightnode.Hash = smash(k)
-	rightnode.Parent = mid.Hash
 
 	// update the middle node (shorten edgname to commonprefix)
 	mid.Edgename = commonprefix 
 	mid.Value = []string{}
+	mid.Key = commonprefix
+	mid.Hash = smash(commonprefix)
 	children := make(map[string]string)
 	children[string(leftnode.Edgename[0])] = leftnode.Hash
 	children[string(rightnode.Edgename[0])] = rightnode.Hash
-
 	mid.Children = children
+	rightnode.Parent = mid.Hash	
+	leftnode.Parent = mid.Hash
+
+	// also update mid's parent hash
+	midparent := t.dnodeFromHash(mid.Parent)
+	midparent.Children[string(mid.Key[0])] = mid.Hash
 	
+	t.write(midparent)
 	t.write(mid)
 	t.write(leftnode)
 	t.write(rightnode)
+
 }
 
 func (n *disknode) toMem() *node {
@@ -219,13 +270,13 @@ func (n *disknode) toMem() *node {
 func (t *DiskTree) write(a *disknode) {
 	dat, err := json.Marshal(a)
 	if err != nil {
-		log.Println(err)
+		debug(err)
 	}
 	fname := t.path + "/" + a.Hash
-	log.Println("writing", string(dat), "to", fname)
+	debug("writing", string(dat), "to", fname)
 	err = ioutil.WriteFile(fname, dat, 0666)
 	if err != nil {
-		log.Println(err)
+		debug(err)
 	}
 }
 
@@ -238,72 +289,50 @@ func (t *DiskTree) dnodeFromHash(s string) *disknode {
 	dn := new(disknode)
 	dat, err := ioutil.ReadFile(t.path + "/" + s)
 	if err != nil {
-		log.Println(err)
+		debug(err)
 		return nil
 	}
 	err = json.Unmarshal(dat, dn)
 	if err != nil {
-		log.Println(err)
+		debug(err)
 		return nil
 	}
 	return dn
 }
 
-func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
-	m := ""
-	log.Println("Lookup node", n, "search for", search)
-	// it is only nil if we're searching from root
-	if n != nil {
+/* fetch the already existing child of node n from the disk that starts with c */
+func (t *DiskTree) fetchChild(n *node, c string) *node {
+	dn := t.dnodeFromNode(n)
+	v, ok := dn.Children[c]
+	if ok {
+		dv := t.dnodeFromHash(v)
+		return dv.toMem()
+	}
+	return nil
+}
 
-		m = matchprefix(n.Edgename, search)
-		log.Println("matchprefix(", n.Edgename, search, ") ->", m)
-		if len(m) == len(search) {
-			return n, "", m
-		}
-		if m == "" {
-			log.Println("node", n, "has no prefix in common with", search)
-			return nil, "", ""
-		}
-		// partial match
-		if len(m) < len(n.Edgename) {
-			log.Println("partial match", n, m)
-			return n, "", m
+/*
+	Lookup takes the node to start from, the string to search for, and a 
+	count of how many chars are matched already.
+
+	It returns the node that matches most closely and the number of 
+	characters (starting from 0) that match.
+
+*/
+func (t *DiskTree) Lookup(n *node, search string, i int) (*node, int) {
+	if n == nil {
+		return nil, i
+	}
+	match := matchprefix(n.Edgename, search[i:])
+	i += len(match)
+	if i < len(search) {
+		child := t.fetchChild(n, string(search[i]))
+		c, i := t.Lookup(child, search, i)
+		if c != nil {
+			return c, i
 		}
 	}
-	log.Println("len(m) < len(search)", len(m), len(search))
-	if len(m) < len(search) {
-		rest := search[len(m):]
-		if n == nil {
-			n = new(node)
-			n.Key = t.root.Key
-		}
-		dn := t.dnodeFromNode(n)
-		log.Printf("looking for \"%s\" in children of %+v\n", rest, dn)
-		if dn != nil {
-			// maybe later you'll have the courage to make this map uint8
-			// keys instead of string
-			if chash, ok := dn.Children[string(rest[0])]; ok {
-				d := t.dnodeFromHash(chash)
-				s := d.toMem()
-				log.Printf("recurse on \"%s\" with child %+v match so far is \"%s\"\n", rest, d, m)
-				nm, p, m2 := t.Lookup(s, rest)
-				m += m2
-				log.Printf("adding \"%s\" to m to make \"%s\"\n", m2, m)
-				if nm == nil {
-					log.Printf("partial match will return %+v \"%s\" \"%s\"", s, p, m)
-					return s, p, m
-				}
-				return nm, p, m
-			}
-			if len(m) != 0 {
-				log.Printf("no children returning partial match instead %+v \"%s\" \"%s\"\n", n, "", m)
-				return n, "", m
-			}
-		}
-	}
-
-	log.Println("returning nil because no case matched")
-	return nil, "", ""
+	return n, i	
 }
 
 // depth first search
@@ -382,7 +411,7 @@ func wellFormed(part, match, edgename, k string) bool {
 		partmatch := match + part + edgename[len(match):]
 		if strings.HasPrefix(k, partmatch) {
 		} else {
-			log.Printf("wellFormed: (no) '%s' != '%s'\n", partmatch, k)
+			debugf("wellFormed: (no) '%s' != '%s'\n", partmatch, k)
 			return false
 		}
 	}
@@ -394,37 +423,37 @@ func NewNode(value, edgename string, children []*node) *node {
 	if value != "" {
 		v = append(v, value)
 	}
-	log.Println("NewNode: value is", v, len(v))
-	log.Println("NewNode: edgename", edgename)
+	debug("NewNode: value is", v, len(v))
+	debug("NewNode: edgename", edgename)
 	res := &node{"", v, children, nil, edgename}
 	return res
 }
 
 func (t MemTree) Insert(k, v string) {
-	log.Println("insert", k, v)
+	debug("insert", k, v)
 	root := t.root
 	n, part, m := t.Lookup(root, k)
 
-	log.Printf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
+	debugf("Lookup returns node '%+v' part '%v' match '%v'\n", n, part, m)
 	if n == nil {
 		newnode := NewNode(v, k, nil)
-		log.Println("add child", newnode)
+		debug("add child", newnode)
 		root.Children = append(root.Children, newnode)
 		return
 	}
 	if n.Edgename == part || n.Edgename == m {
 		// simple case just add the rest
 		if !wellFormed(part, m, n.Edgename, k) {
-			log.Println("would not be well formed")
+			debug("would not be well formed")
 		} else {
 			nk := k[len(m):]
 			if len(nk) > 0 {
 				newnode := NewNode(v, nk, nil)
 				n.Children = append(n.Children, newnode)
-				log.Println("add child (simple)", newnode)
+				debug("add child (simple)", newnode)
 			} else {
 				n.Value = append(n.Value, v)
-				log.Println("node exists already")
+				debug("node exists already")
 			}
 			return
 		}
@@ -446,8 +475,8 @@ func (t MemTree) Insert(k, v string) {
 	n.Children = nil
 	n.Children = append(n.Children, newnodeA)
 	n.Children = append(n.Children, newnodeB)
-	log.Println("add child (split a)", newnodeA)
-	log.Println("add child (split b)", newnodeB)
+	debug("add child (split a)", newnodeA)
+	debug("add child (split b)", newnodeB)
 
 }
 
@@ -472,18 +501,18 @@ func matchprefix(a, b string) string {
 Lookup return the partial match of the current node and the match in the tree so far
 */
 func (t MemTree) Lookup(n *node, s string) (nres *node, part, match string) {
-	log.Printf("Lookup: NODE<%+v> for '%s'\n", *n, s)
+	debugf("Lookup: NODE<%+v> for '%s'\n", *n, s)
 	if s == "" {
 		return n, "", ""
 	}
 	for _, c := range n.Children {
-		log.Printf("\tchild %s", c.Edgename)
+		debugf("\tchild %s", c.Edgename)
 		match = matchprefix(c.Edgename, s)
 		if match == "" {
-			log.Println(" does not match")
+			debug(" does not match")
 			continue
 		} else {
-			log.Println(" matches", len(match), "characters ->", match)
+			debug(" matches", len(match), "characters ->", match)
 			if len(match) < len(c.Edgename) {
 				return c, "", match
 			}

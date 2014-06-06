@@ -253,14 +253,15 @@ func TestDiskNodeJson(t *testing.T) {
 
 }
 
-func foundFile(s string, t *testing.T) {
-	if _, err := os.Stat(s); os.IsNotExist(err) {
+func foundFile(dirname, s string, t *testing.T) {
+	if _, err := os.Stat(dirname + "/" + smash(s)); os.IsNotExist(err) {
 		t.Fatal("failed to find file", s)
 	}
 }
 
 func dnodeisFound(s string, tree *DiskTree, t *testing.T) {
-	a, _, c := tree.Lookup(nil, s)
+	a, i := tree.Lookup(tree.root.toMem(), s, 0)
+	c := s[:i]
 	if c != s {
 		t.Fatalf("could not find string %s closest was %+v\n", s, a)
 	}
@@ -271,7 +272,7 @@ func TestDiskNode1(t *testing.T) {
 	defer os.RemoveAll(dirname)
 	s := NewDiskTree(dirname)
 	s.Insert("key", "value")
-	foundFile(dirname+"/"+smash("key"), t)
+	foundFile(dirname, "key", t)
 	dnodeisFound("key", s, t)
 }
 
@@ -282,7 +283,7 @@ func TestDiskNodeSimple(t *testing.T) {
 	s.Insert("key", "value")
 	s.Insert("keys", "v2")
 	dnodeisFound("keys", s, t)
-	foundFile(dirname+"/"+smash("keys"), t)
+	foundFile(dirname, "keys", t)
 }
 
 func TestDiskNodeSplit(t *testing.T) {
@@ -292,5 +293,28 @@ func TestDiskNodeSplit(t *testing.T) {
 	s.Insert("key", "value")
 	s.Insert("ketones", "v2")
 	dnodeisFound("ketones", s, t)
-	foundFile(dirname+"/"+smash("keys"), t)
+	foundFile(dirname, "ketones", t)
+}
+
+func TestDiskNodeF1(t *testing.T) {
+	l := `abstain
+abstained
+abstaining
+abstention
+abstentions
+abstinence
+abstinent
+abstract
+abstracted
+abstraction
+abstractions
+abstracts
+abstruse`
+	s := strings.Split(l, "\n")
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	tree := NewDiskTree(dirname)
+	for _, v := range s {
+		tree.Insert(v, "")
+	}
 }
