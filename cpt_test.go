@@ -259,16 +259,20 @@ func foundFile(s string, t *testing.T) {
 	}
 }
 
+func dnodeisFound(s string, tree *DiskTree, t *testing.T) {
+	a, _, c := tree.Lookup(nil, s)
+	if c != s {
+		t.Fatalf("could not find string %s closest was %+v\n", s, a)
+	}
+}
+
 func TestDiskNode1(t *testing.T) {
 	dirname := "root"
 	defer os.RemoveAll(dirname)
 	s := NewDiskTree(dirname)
 	s.Insert("key", "value")
 	foundFile(dirname+"/"+smash("key"), t)
-	_, _, c := s.Lookup(nil, "key")
-	if c != "key" {
-		t.Fatal("did not find it", "key", "found", c)
-	}
+	dnodeisFound("key", s, t)
 }
 
 func TestDiskNodeSimple(t *testing.T) {
@@ -277,9 +281,16 @@ func TestDiskNodeSimple(t *testing.T) {
 	s := NewDiskTree(dirname)
 	s.Insert("key", "value")
 	s.Insert("keys", "v2")
-	_, _, c := s.Lookup(nil, "keys")
-	if c != "keys" {
-		t.Fatal("did not find it found", c)
-	}
+	dnodeisFound("keys", s, t)
+	foundFile(dirname+"/"+smash("keys"), t)
+}
+
+func TestDiskNodeSplit(t *testing.T) {
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	s := NewDiskTree(dirname)
+	s.Insert("key", "value")
+	s.Insert("ketones", "v2")
+	dnodeisFound("ketones", s, t)
 	foundFile(dirname+"/"+smash("keys"), t)
 }

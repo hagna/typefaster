@@ -162,6 +162,48 @@ func (t *DiskTree) Insert(k, v string) {
 		}
 	}
 
+	if part == "" {
+		part = m
+	}
+
+	/* say we have the string "key" and we add "ketones"
+	   then the left node will be "y" the right node will be "tones"
+	   and the middle will be "ke"
+	*/
+	mid := t.dnodeFromNode(n)
+	commonprefix := part
+	lname := n.Edgename[len(commonprefix):]
+	rname := k[len(m):] 
+
+	// left node (preserve the old string)
+	leftnode := new(disknode)
+	leftnode.Value = n.Value
+	leftnode.Edgename = lname
+	leftnode.Key = mid.Key
+	leftnode.Hash = mid.Hash
+	leftnode.Parent = mid.Parent
+	leftnode.Children = mid.Children
+
+	// right node (add the new string)
+	rightnode := new(disknode)
+	rightnode.Value = []string{v}
+	rightnode.Edgename = rname
+	rightnode.Key = k
+	rightnode.Hash = smash(k)
+	rightnode.Parent = mid.Hash
+
+	// update the middle node (shorten edgname to commonprefix)
+	mid.Edgename = commonprefix 
+	mid.Value = []string{}
+	children := make(map[string]string)
+	children[string(leftnode.Edgename[0])] = leftnode.Hash
+	children[string(rightnode.Edgename[0])] = rightnode.Hash
+
+	mid.Children = children
+	
+	t.write(mid)
+	t.write(leftnode)
+	t.write(rightnode)
 }
 
 func (n *disknode) toMem() *node {
@@ -235,15 +277,15 @@ func (t *DiskTree) Lookup(n *node, search string) (*node, string, string) {
 			n = new(node)
 			n.Key = t.root.Key
 		}
-		log.Printf("looking for \"%s\" in children of %+v\n", rest, n)
 		dn := t.dnodeFromNode(n)
+		log.Printf("looking for \"%s\" in children of %+v\n", rest, dn)
 		if dn != nil {
 			// maybe later you'll have the courage to make this map uint8
 			// keys instead of string
 			if chash, ok := dn.Children[string(rest[0])]; ok {
 				d := t.dnodeFromHash(chash)
 				s := d.toMem()
-				log.Printf("recurse on \"%s\" with child %+v match so far is \"%s\"\n", rest, s, m)
+				log.Printf("recurse on \"%s\" with child %+v match so far is \"%s\"\n", rest, d, m)
 				nm, p, m2 := t.Lookup(s, rest)
 				m += m2
 				log.Printf("adding \"%s\" to m to make \"%s\"\n", m2, m)
