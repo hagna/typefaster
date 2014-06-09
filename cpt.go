@@ -335,6 +335,24 @@ func (t *DiskTree) Lookup(n *node, search string, i int) (*node, int) {
 	return n, i	
 }
 
+// depth first print
+// too much converting between node and disknode
+func (t *DiskTree) Print(w io.Writer, n *node, prefix string) {
+	dn := t.dnodeFromNode(n)
+	if len(dn.Children) == 0 {
+		fmt.Fprintf(w, "%s %s\n", prefix, n.Value)
+	} else {
+		for a, c := range dn.Children {
+			cnode := t.dnodeFromHash(c)
+			fmt.Println("next child", a, "edgename is", cnode.Edgename)
+			t.Print(w, cnode.toMem(), prefix + cnode.Edgename)
+		}
+		if len(n.Value) != 0 {
+			fmt.Fprintf(w, "%s %s\n", prefix, n.Value)
+		}
+	}
+}
+
 // depth first search
 func (t *MemTree) Print(n *node, prefix string) {
 	if len(n.Children) == 0 {

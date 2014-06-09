@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"bytes"
 )
 
 func TestInsertDup(t *testing.T) {
@@ -317,4 +318,25 @@ abstruse`
 	for _, v := range s {
 		tree.Insert(v, "")
 	}
+	b := bytes.NewBuffer([]byte{})
+	tree.Print(b, tree.root.toMem(), "")
+	t.Log(b.String())
+
+}
+
+func TestDiskNodeAAA(t *testing.T) {
+	l := `a
+aaa
+aardvark
+aaron`
+	s := strings.Split(l, "\n")
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	tree := NewDiskTree(dirname)
+	for _, v := range s {
+		tree.Insert(v, "")
+	}
+	b := bytes.NewBuffer([]byte{})
+	tree.Print(b, tree.root.toMem(), "")
+	t.Log(b.String())
 }
