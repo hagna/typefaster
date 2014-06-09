@@ -330,7 +330,7 @@ func (t *DiskTree) Lookup(n *node, search string, i int) (*node, int) {
 	}
 	match := matchprefix(n.Edgename, search[i:])
 	i += len(match)
-	if i < len(search) && i >= len(n.Edgename) {
+	if i < len(search) && len(n.Edgename) == len(match) {
 		child := t.fetchChild(n, string(search[i]))
 		c, i := t.Lookup(child, search, i)
 		if c != nil {

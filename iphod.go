@@ -63,8 +63,8 @@ func decode(p string) string {
 
 // make a compact prefix tree out of iphod for the keyboard to use
 // spelling words out of phonemes
-func Maketree(iphod string) (*MemTree, error) {
-	tree := NewMemTree("root")
+func Maketree(iphod, root string) (*DiskTree, error) {
+	tree := NewDiskTree(root)
 	cb := func(word, phonemes string, nphones int) {
 		phonemes = encode(phonemes)
 		tree.Insert(phonemes, word)

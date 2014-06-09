@@ -18,11 +18,9 @@ func main() {
 	flag.Parse()
 	if *iphod != "" {
 		if *mkdir != "" {
-			if tree, err := typefaster.Maketree(*iphod); err != nil {
+			if tree, err := typefaster.Maketree(*iphod, *mkdir); err != nil {
 				log.Println("problem loading iphod")
-			} else {
-				tree.Mkdir(tree.Root, []string{*mkdir})
-			}
+			} 
 			return
 		}
 		if err := typefaster.Readiphod(*iphod); err != nil {
@@ -32,11 +30,11 @@ func main() {
 	}
 
 	if *lookup != "" {
-		tree := typefaster.TreePath(*lookup)
+		tree := typefaster.NewDiskTree(*lookup)
 		for _, w := range flag.Args() {
 			log.Println(w)
-			a, b, c := tree.Lookup(nil, w)
-			log.Println("found", a, b, c)
+			a, i := tree.Lookup(tree.root, w, 0)
+			log.Println("found", a, i)
 		}
 
 			log.Println(tree)
