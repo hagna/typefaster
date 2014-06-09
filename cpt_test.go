@@ -318,6 +318,9 @@ abstruse`
 	for _, v := range s {
 		tree.Insert(v, "")
 	}
+	for _, v := range s {
+		dnodeisFound(v, tree, t)
+	}
 	b := bytes.NewBuffer([]byte{})
 	tree.Print(b, tree.root.toMem(), "")
 	t.Log(b.String())
@@ -335,6 +338,9 @@ aaron`
 	tree := NewDiskTree(dirname)
 	for _, v := range s {
 		tree.Insert(v, "")
+	}
+	for _, v := range s {
+		dnodeisFound(v, tree, t)
 	}
 	b := bytes.NewBuffer([]byte{})
 	tree.Print(b, tree.root.toMem(), "")

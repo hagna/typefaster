@@ -214,8 +214,13 @@ func (t *DiskTree) Insert(k, v string) {
 	*/
 
 	mid := t.dnodeFromNode(n)
+	// whatever is left in n.Key after taking out the length of common prefix
 	lname := n.Key[len(commonprefix):]
 	rname := k[len(commonprefix):] 
+
+	// index of edgename
+	ie := strings.LastIndex(n.Key, n.Edgename)
+	midname := n.Key[ie:len(commonprefix)]
 
 	debug("into", lname, rname)
 
@@ -234,8 +239,8 @@ func (t *DiskTree) Insert(k, v string) {
 	rightnode.Key = k
 	rightnode.Hash = smash(k)
 
-	// update the middle node (shorten edgname to commonprefix)
-	mid.Edgename = commonprefix 
+	// update the middle node 
+	mid.Edgename = midname
 	mid.Value = []string{}
 	mid.Key = commonprefix
 	mid.Hash = smash(commonprefix)
@@ -248,7 +253,7 @@ func (t *DiskTree) Insert(k, v string) {
 
 	// also update mid's parent hash
 	midparent := t.dnodeFromHash(mid.Parent)
-	midparent.Children[string(mid.Key[0])] = mid.Hash
+	midparent.Children[string(midname[0])] = mid.Hash
 	
 	t.write(midparent)
 	t.write(mid)
@@ -325,7 +330,7 @@ func (t *DiskTree) Lookup(n *node, search string, i int) (*node, int) {
 	}
 	match := matchprefix(n.Edgename, search[i:])
 	i += len(match)
-	if i < len(search) {
+	if i < len(search) && i >= len(n.Edgename) {
 		child := t.fetchChild(n, string(search[i]))
 		c, i := t.Lookup(child, search, i)
 		if c != nil {
