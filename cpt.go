@@ -75,7 +75,12 @@ type disknode struct {
 type Tree interface {
 	Insert(key, value string)
 	Lookup(parent *node, searchfor string) (c *node, p, m string)
+	Root() *node
 	String() string
+}
+
+func (t *DiskTree) Root() *node {
+	return t.root.toMem()
 }
 
 type MemTree struct {
@@ -106,9 +111,16 @@ func NewDiskTree(dirname string) *DiskTree {
 	res.root = new(disknode)
 	res.root.Children = make(map[string]string)
 	res.root.Key = dirname
-	res.root.Hash = smash(dirname)
+	res.root.Hash = "root"
 	res.path = dirname
+if _, err := os.Stat(dirname + "/" + res.root.Hash); os.IsNotExist(err) {
+	debug("no such file or directory: %s CREATING", dirname)
+
 	res.write(res.root)
+} else {
+	debug("dir exists already")
+	res.root = res.dnodeFromHash(smash(dirname))
+}
 	return res
 }
 
@@ -347,9 +359,8 @@ func (t *DiskTree) Print(w io.Writer, n *node, prefix string) {
 	if len(dn.Children) == 0 {
 		fmt.Fprintf(w, "%s %s\n", prefix, n.Value)
 	} else {
-		for a, c := range dn.Children {
+		for _, c := range dn.Children {
 			cnode := t.dnodeFromHash(c)
-			fmt.Println("next child", a, "edgename is", cnode.Edgename)
 			t.Print(w, cnode.toMem(), prefix + cnode.Edgename)
 		}
 		if len(n.Value) != 0 {
@@ -446,8 +457,6 @@ func NewNode(value, edgename string, children []*node) *node {
 	if value != "" {
 		v = append(v, value)
 	}
-	debug("NewNode: value is", v, len(v))
-	debug("NewNode: edgename", edgename)
 	res := &node{"", v, children, nil, edgename}
 	return res
 }

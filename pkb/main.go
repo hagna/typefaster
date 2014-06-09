@@ -9,25 +9,32 @@ import (
 	"os"
 )
 
+var genfromiphod = flag.String("genfromiphod", "", "generate the tree from the iphod.txt")
+var treename = flag.String("treename", "root", "name of tree directory")
 var verbose = flag.Bool("v", false, "verbose?")
-var iphod = flag.String("iphod", "", "iphod file name")
-var mkdir = flag.String("mkdir", "", "make the iphod into a trie on disk")
-var lookup = flag.String("l", "", "lookup a word")
+var print = flag.Bool("print", false, "print?")
 
 func main() {
 	flag.Parse()
-	if *iphod != "" {
-		if *mkdir != "" {
-			if tree, err := typefaster.Maketree(*iphod, *mkdir); err != nil {
+	if *genfromiphod != "" {
+		var tree *typefaster.DiskTree
+		var err error
+		if tree, err = typefaster.Maketree(*genfromiphod, *treename); err != nil {
 				log.Println("problem loading iphod")
-			} 
-			return
 		}
+		fmt.Println(tree)
+	
+		return 
+	}
+	if *print {
+		t := typefaster.NewDiskTree(*treename)
+		t.Print(os.Stdout, t.Root(), "")
+	}
+/*
 		if err := typefaster.Readiphod(*iphod); err != nil {
 			log.Println("problem reading iphod")
 			return
 		}
-	}
 
 	if *lookup != "" {
 		tree := typefaster.NewDiskTree(*lookup)
@@ -40,6 +47,7 @@ func main() {
 			log.Println(tree)
 		return
 	}
+*/
 	total := 0
 	utotal := 0
 	ucount := 0
