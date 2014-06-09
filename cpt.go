@@ -110,8 +110,8 @@ func NewDiskTree(dirname string) *DiskTree {
 	res := new(DiskTree)
 	res.root = new(disknode)
 	res.root.Children = make(map[string]string)
-	res.root.Key = dirname
-	res.root.Hash = "root"
+	res.root.Key = dirname + "asdfasdfjkl;ajsdl;fkjaskl;djasdf"
+	res.root.Hash = smash(res.root.Key)
 	res.path = dirname
 if _, err := os.Stat(dirname + "/" + res.root.Hash); os.IsNotExist(err) {
 	debug("no such file or directory: %s CREATING", dirname)
@@ -119,7 +119,7 @@ if _, err := os.Stat(dirname + "/" + res.root.Hash); os.IsNotExist(err) {
 	res.write(res.root)
 } else {
 	debug("dir exists already")
-	res.root = res.dnodeFromHash(smash(dirname))
+	res.root = res.dnodeFromHash(res.root.Hash)
 }
 	return res
 }
