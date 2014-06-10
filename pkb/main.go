@@ -20,34 +20,34 @@ func main() {
 		var tree *typefaster.DiskTree
 		var err error
 		if tree, err = typefaster.Maketree(*genfromiphod, *treename); err != nil {
-				log.Println("problem loading iphod")
+			log.Println("problem loading iphod")
 		}
 		fmt.Println(tree)
-	
-		return 
+
+		return
 	}
 	if *print {
 		t := typefaster.NewDiskTree(*treename)
 		t.Print(os.Stdout, t.Root(), "")
 	}
-/*
-		if err := typefaster.Readiphod(*iphod); err != nil {
-			log.Println("problem reading iphod")
+	/*
+			if err := typefaster.Readiphod(*iphod); err != nil {
+				log.Println("problem reading iphod")
+				return
+			}
+
+		if *lookup != "" {
+			tree := typefaster.NewDiskTree(*lookup)
+			for _, w := range flag.Args() {
+				log.Println(w)
+				a, i := tree.Lookup(tree.root, w, 0)
+				log.Println("found", a, i)
+			}
+
+				log.Println(tree)
 			return
 		}
-
-	if *lookup != "" {
-		tree := typefaster.NewDiskTree(*lookup)
-		for _, w := range flag.Args() {
-			log.Println(w)
-			a, i := tree.Lookup(tree.root, w, 0)
-			log.Println("found", a, i)
-		}
-
-			log.Println(tree)
-		return
-	}
-*/
+	*/
 	total := 0
 	utotal := 0
 	ucount := 0

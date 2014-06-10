@@ -1,11 +1,11 @@
 package typefaster
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"strings"
 	"testing"
-	"bytes"
 )
 
 func TestInsertDup(t *testing.T) {
@@ -298,9 +298,9 @@ func TestDiskNodeValues(t *testing.T) {
 		t.Fatal("should have two values")
 	}
 	for i, z := range []string{"value", "v2"} {
-	if a.Value[i] != z {
-		t.Fatal("missing value", i, z, "got", a.Value[i])
-	}
+		if a.Value[i] != z {
+			t.Fatal("missing value", i, z, "got", a.Value[i])
+		}
 	}
 }
 
@@ -405,4 +405,3 @@ aardvark`
 	tree.Print(b, tree.root.toMem(), "")
 	t.Log(b.String())
 }
-

@@ -7,8 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 	"runtime"
+	"strings"
 )
 
 /*
@@ -113,14 +113,14 @@ func NewDiskTree(dirname string) *DiskTree {
 	res.root.Key = dirname + "asdfasdfjkl;ajsdl;fkjaskl;djasdf"
 	res.root.Hash = smash(res.root.Key)
 	res.path = dirname
-if _, err := os.Stat(dirname + "/" + res.root.Hash); os.IsNotExist(err) {
-	debug("no such file or directory: %s CREATING", dirname)
+	if _, err := os.Stat(dirname + "/" + res.root.Hash); os.IsNotExist(err) {
+		debug("no such file or directory: %s CREATING", dirname)
 
-	res.write(res.root)
-} else {
-	debug("dir exists already")
-	res.root = res.dnodeFromHash(res.root.Hash)
-}
+		res.write(res.root)
+	} else {
+		debug("dir exists already")
+		res.root = res.dnodeFromHash(res.root.Hash)
+	}
 	return res
 }
 
@@ -173,7 +173,7 @@ func debugf(format string, i ...interface{}) {
 		fname = fname[j+1:]
 		msg = fmt.Sprintf("%s:%d ", fname, lineno)
 	}
-	fmt.Printf(msg + format, i...)
+	fmt.Printf(msg+format, i...)
 }
 
 func (t *DiskTree) Insert(k, v string) {
@@ -182,7 +182,7 @@ func (t *DiskTree) Insert(k, v string) {
 	n, i := t.Lookup(root, k, 0)
 	commonprefix := k[:i]
 	debug("Insert", k, "and commonprefix is", commonprefix)
-	
+
 	debugf("Lookup returns node '%+v' mathced chars = '%v' match '%v'\n", n, i, k[:i])
 
 	debug("is it the root?")
@@ -197,7 +197,7 @@ func (t *DiskTree) Insert(k, v string) {
 
 	debug("is it a complete match?")
 	if k == n.Key {
-	dn := t.dnodeFromNode(n)
+		dn := t.dnodeFromNode(n)
 		dn.Value = append(dn.Value, v)
 		t.write(dn)
 
@@ -216,7 +216,7 @@ func (t *DiskTree) Insert(k, v string) {
 			dn := t.dnodeFromNode(n)
 			t.addChild(dn, e, k, []string{v})
 			debug("yes")
-			return 
+			return
 		}
 	}
 	debug("no")
@@ -235,8 +235,7 @@ func (t *DiskTree) Insert(k, v string) {
 
 	// whatever is left in n.Key after taking out the length of common prefix
 	lname := n.Key[len(commonprefix):]
-	rname := k[len(commonprefix):] 
-
+	rname := k[len(commonprefix):]
 
 	// index of edgename
 	ie := strings.LastIndex(n.Key, n.Edgename)
@@ -253,7 +252,7 @@ func (t *DiskTree) Insert(k, v string) {
 	leftnode.Children = mid.Children
 	children[string(leftnode.Edgename[0])] = leftnode.Hash
 
-	// update the middle node 
+	// update the middle node
 	mid.Edgename = midname
 	mid.Value = []string{}
 	mid.Key = commonprefix
@@ -270,7 +269,7 @@ func (t *DiskTree) Insert(k, v string) {
 		rightnode.Key = k
 		rightnode.Hash = smash(k)
 		children[string(rightnode.Edgename[0])] = rightnode.Hash
-		rightnode.Parent = mid.Hash	
+		rightnode.Parent = mid.Hash
 		t.write(rightnode)
 	}
 
@@ -279,7 +278,7 @@ func (t *DiskTree) Insert(k, v string) {
 	// also update mid's parent hash
 	midparent := t.dnodeFromHash(mid.Parent)
 	midparent.Children[string(midname[0])] = mid.Hash
-	
+
 	t.write(midparent)
 	t.write(mid)
 	t.write(leftnode)
@@ -341,19 +340,19 @@ func (t *DiskTree) fetchChild(n *node, c string) *node {
 }
 
 /*
-	Lookup takes the node to start from, the string to search for, and a 
+	Lookup takes the node to start from, the string to search for, and a
 	count of how many chars are matched already.
 
-	It returns the node that matches most closely and the number of 
+	It returns the node that matches most closely and the number of
 	characters (starting from 0) that match.
 
 */
 func (t *DiskTree) Lookup(n *node, search string, i int) (*node, int) {
-	
+
 	if n == nil {
 		return nil, i
 	}
-dn := t.dnodeFromNode(n)
+	dn := t.dnodeFromNode(n)
 	debugf("Lookup(%+v, \"%s\", %d)\n", dn, search, i)
 	match := matchprefix(n.Edgename, search[i:])
 	i += len(match)
@@ -364,7 +363,7 @@ dn := t.dnodeFromNode(n)
 			return c, i
 		}
 	}
-	return n, i	
+	return n, i
 }
 
 // depth first print
@@ -376,7 +375,7 @@ func (t *DiskTree) Print(w io.Writer, n *node, prefix string) {
 	} else {
 		for _, c := range dn.Children {
 			cnode := t.dnodeFromHash(c)
-			t.Print(w, cnode.toMem(), prefix + cnode.Edgename)
+			t.Print(w, cnode.toMem(), prefix+cnode.Edgename)
 		}
 		if len(n.Value) != 0 {
 			fmt.Fprintf(w, "%s %s\n", decode(prefix), n.Value)
