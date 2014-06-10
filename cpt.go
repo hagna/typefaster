@@ -188,7 +188,8 @@ func (t *DiskTree) Insert(k, v string) {
 	debug("is it the root?")
 	if n == root {
 		debug("addChild")
-		t.addChild(t.root, k, k, []string{v})
+		latestroot := t.dnodeFromHash(t.root.Hash)
+		t.addChild(latestroot, k, k, []string{v})
 		debug("yes")
 		return
 	}
@@ -344,9 +345,12 @@ func (t *DiskTree) fetchChild(n *node, c string) *node {
 
 */
 func (t *DiskTree) Lookup(n *node, search string, i int) (*node, int) {
+	
 	if n == nil {
 		return nil, i
 	}
+dn := t.dnodeFromNode(n)
+	debugf("Lookup(%+v, \"%s\", %d)\n", dn, search, i)
 	match := matchprefix(n.Edgename, search[i:])
 	i += len(match)
 	if i < len(search) && len(n.Edgename) == len(match) {
