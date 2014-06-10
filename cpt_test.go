@@ -287,6 +287,23 @@ func TestDiskNodeSimple(t *testing.T) {
 	foundFile(dirname, "keys", t)
 }
 
+func TestDiskNodeValues(t *testing.T) {
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	s := NewDiskTree(dirname)
+	s.Insert("key", "value")
+	s.Insert("key", "v2")
+	a, _ := s.Lookup(s.Root(), "key", 0)
+	if len(a.Value) != 2 {
+		t.Fatal("should have two values")
+	}
+	for i, z := range []string{"value", "v2"} {
+	if a.Value[i] != z {
+		t.Fatal("missing value", i, z, "got", a.Value[i])
+	}
+	}
+}
+
 func TestDiskNodeSplit(t *testing.T) {
 	dirname := "root"
 	defer os.RemoveAll(dirname)

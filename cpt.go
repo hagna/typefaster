@@ -197,6 +197,10 @@ func (t *DiskTree) Insert(k, v string) {
 
 	debug("is it a complete match?")
 	if k == n.Key {
+	dn := t.dnodeFromNode(n)
+		dn.Value = append(dn.Value, v)
+		t.write(dn)
+
 		debug("node", n, "already found append value here TODO")
 		debug("yes")
 		return
@@ -261,7 +265,7 @@ func (t *DiskTree) Insert(k, v string) {
 	if rname != "" {
 		// right node (add the new string)
 		rightnode := new(disknode)
-		rightnode.Value = []string{v}
+		rightnode.Value = append(rightnode.Value, v)
 		rightnode.Edgename = rname
 		rightnode.Key = k
 		rightnode.Hash = smash(k)
@@ -368,14 +372,14 @@ dn := t.dnodeFromNode(n)
 func (t *DiskTree) Print(w io.Writer, n *node, prefix string) {
 	dn := t.dnodeFromNode(n)
 	if len(dn.Children) == 0 {
-		fmt.Fprintf(w, "%s %s\n", prefix, n.Value)
+		fmt.Fprintf(w, "%s %s\n", decode(prefix), n.Value)
 	} else {
 		for _, c := range dn.Children {
 			cnode := t.dnodeFromHash(c)
 			t.Print(w, cnode.toMem(), prefix + cnode.Edgename)
 		}
 		if len(n.Value) != 0 {
-			fmt.Fprintf(w, "%s %s\n", prefix, n.Value)
+			fmt.Fprintf(w, "%s %s\n", decode(prefix), n.Value)
 		}
 	}
 }
