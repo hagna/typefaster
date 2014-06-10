@@ -346,3 +346,21 @@ aaron`
 	tree.Print(b, tree.root.toMem(), "")
 	t.Log(b.String())
 }
+
+func TestDiskNodeBug2(t *testing.T) {
+	l := `aarons
+aaron`
+	s := strings.Split(l, "\n")
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	tree := NewDiskTree(dirname)
+	for _, v := range s {
+		tree.Insert(v, "")
+	}
+	for _, v := range s {
+		dnodeisFound(v, tree, t)
+	}
+	b := bytes.NewBuffer([]byte{})
+	tree.Print(b, tree.root.toMem(), "")
+	t.Log(b.String())
+}

@@ -226,9 +226,12 @@ func (t *DiskTree) Insert(k, v string) {
 	*/
 
 	mid := t.dnodeFromNode(n)
+	children := make(map[string]string)
+
 	// whatever is left in n.Key after taking out the length of common prefix
 	lname := n.Key[len(commonprefix):]
 	rname := k[len(commonprefix):] 
+
 
 	// index of edgename
 	ie := strings.LastIndex(n.Key, n.Edgename)
@@ -243,25 +246,30 @@ func (t *DiskTree) Insert(k, v string) {
 	leftnode.Key = mid.Key
 	leftnode.Hash = mid.Hash
 	leftnode.Children = mid.Children
-
-	// right node (add the new string)
-	rightnode := new(disknode)
-	rightnode.Value = []string{v}
-	rightnode.Edgename = rname
-	rightnode.Key = k
-	rightnode.Hash = smash(k)
+	children[string(leftnode.Edgename[0])] = leftnode.Hash
 
 	// update the middle node 
 	mid.Edgename = midname
 	mid.Value = []string{}
 	mid.Key = commonprefix
 	mid.Hash = smash(commonprefix)
-	children := make(map[string]string)
-	children[string(leftnode.Edgename[0])] = leftnode.Hash
-	children[string(rightnode.Edgename[0])] = rightnode.Hash
-	mid.Children = children
-	rightnode.Parent = mid.Hash	
 	leftnode.Parent = mid.Hash
+
+	// if you have 'cats' and try to add 'cat'
+	// you'll have this empty right node case
+	if rname != "" {
+		// right node (add the new string)
+		rightnode := new(disknode)
+		rightnode.Value = []string{v}
+		rightnode.Edgename = rname
+		rightnode.Key = k
+		rightnode.Hash = smash(k)
+		children[string(rightnode.Edgename[0])] = rightnode.Hash
+		rightnode.Parent = mid.Hash	
+		t.write(rightnode)
+	}
+
+	mid.Children = children
 
 	// also update mid's parent hash
 	midparent := t.dnodeFromHash(mid.Parent)
@@ -270,7 +278,6 @@ func (t *DiskTree) Insert(k, v string) {
 	t.write(midparent)
 	t.write(mid)
 	t.write(leftnode)
-	t.write(rightnode)
 
 }
 

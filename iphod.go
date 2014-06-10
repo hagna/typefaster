@@ -66,8 +66,8 @@ func decode(p string) string {
 func Maketree(iphod, root string) (*DiskTree, error) {
 	tree := NewDiskTree(root)
 	cb := func(word, phonemes string, nphones int) {
-		//phonemes = encode(phonemes)
-		tree.Insert(word, phonemes)
+		phonemes = encode(phonemes)
+		tree.Insert(phonemes, word)
 	}
 	err := readiphod(iphod, cb)
 	if err != nil {
