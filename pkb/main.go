@@ -13,6 +13,7 @@ var genfromiphod = flag.String("genfromiphod", "", "generate the tree from the i
 var treename = flag.String("treename", "root", "name of tree directory")
 var verbose = flag.Bool("v", false, "verbose?")
 var print = flag.Bool("print", false, "print?")
+var lookup = flag.Bool("lookup", false, "lookup")
 
 func main() {
 	flag.Parse()
@@ -29,6 +30,24 @@ func main() {
 	if *print {
 		t := typefaster.NewDiskTree(*treename)
 		t.Print(os.Stdout, t.Root(), "")
+		return
+	}
+	if *lookup {
+		tree := typefaster.NewDiskTree(*treename)
+		for _, w := range flag.Args() {
+			we := typefaster.Encode(w)
+			a, i := tree.Lookup(tree.Root(), we, 0)
+			if a.Key != we {
+				fmt.Printf("closest match \"%s\"\n", typefaster.Decode(a.Key[:i]))
+			} 
+			if len(a.Value) == 0 {
+				fmt.Println("Here are all the spellings with a common prefix.")
+				tree.Print(os.Stdout, a, "")
+			} else {
+				fmt.Println(a.Value)
+			}
+		}
+		return
 	}
 /*
 		if err := typefaster.Readiphod(*iphod); err != nil {

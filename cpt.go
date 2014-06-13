@@ -372,14 +372,14 @@ dn := t.dnodeFromNode(n)
 func (t *DiskTree) Print(w io.Writer, n *node, prefix string) {
 	dn := t.dnodeFromNode(n)
 	if len(dn.Children) == 0 {
-		fmt.Fprintf(w, "%s %s\n", decode(prefix), n.Value)
+		fmt.Fprintf(w, "%s %s\n", Decode(prefix), n.Value)
 	} else {
 		for _, c := range dn.Children {
 			cnode := t.dnodeFromHash(c)
 			t.Print(w, cnode.toMem(), prefix + cnode.Edgename)
 		}
 		if len(n.Value) != 0 {
-			fmt.Fprintf(w, "%s %s\n", decode(prefix), n.Value)
+			fmt.Fprintf(w, "%s %s\n", Decode(prefix), n.Value)
 		}
 	}
 }
@@ -404,7 +404,7 @@ func (t *MemTree) Mkdir(n *node, prefix []string) {
 		res := []string{}
 		// skip first no encoded root
 		for _, v := range key[1:] {
-			res = append(res, decode(v))
+			res = append(res, Decode(v))
 		}
 		dir := key[0] + "/" + strings.Join(res, "/")
 		fmt.Println("DIR", dir)
