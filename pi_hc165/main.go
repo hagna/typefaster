@@ -4,15 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hagna/typefaster"
-	"log"
 	"os"
 	"os/signal"
 )
 
 
 var verbose = flag.Bool("v", false, "verbose?")
-var iphod = flag.String("iphod", "iphod.txt", "iphod file name")
-var pimode = flag.Bool("pi", false, "use shift register connected to raspberry pi")
+var treename = flag.String("treename", "root", "name of tree directory")
 
 
 func decode(a uint8) string {
@@ -24,10 +22,16 @@ func decode(a uint8) string {
 
 type Mcs struct {
 	buf uint8
+	Tree *typefaster.DiskTree
+	Cnode *typefaster.Node
+	word []string
+	iword int
 }
 
 func NewMcs() *Mcs {
 	m := new(Mcs)
+	m.Tree = typefaster.NewDiskTree(*treename)
+	m.Cnode = m.Tree.Root()
 	return m
 }
 
@@ -52,6 +56,10 @@ func decodestate(keys []bool) uint8 {
 	return res
 }
 
+func isLast(m uint8) bool {
+	return (m & 0xc0) != 0
+}
+
 /* Decode strokes this ought to run at some high rate in hz */
 func (m *Mcs) keystates(keys []bool) bool {
 	if keysup(keys) {
@@ -60,8 +68,26 @@ func (m *Mcs) keystates(keys []bool) bool {
 			return false //quit
 		}
 		if m.buf != 0 {
-			fmt.Print(decode(m.buf))
+			fmt.Printf("%x\n", m.buf)
+			
+			phon := decode(m.buf)
+			ebuf := typefaster.Encode(phon)
+			m.Cnode, _ = m.Tree.Lookup(m.Cnode, m.Cnode.Key + ebuf, 0)
+			fmt.Println("found", m.Cnode)
+			if isLast(m.buf) {
+				if len(m.Cnode.Value) == 0 {
+					fmt.Printf("Here are all the spellings with a common prefix of %s\n", m.Cnode.Key)
+					//m.Tree.Print(os.Stdout, m.Cnode, "")
+				} else {
+					m.word = m.Cnode.Value
+					m.iword = 0
+					fmt.Println("values are", m.Cnode.Value)
+				}
+				m.Cnode = m.Tree.Root()
+			}
 			m.buf = 0
+			fmt.Println(phon)
+
 		}
 	} else {
 		m.buf |= decodestate(keys)
@@ -80,7 +106,15 @@ func pi_shiftreg_interact() {
 		}
 	}()
 	nkeys := 8
-	done := NewSR(nkeys, mcs.keystates)
+/*
+	printem := func (keys []bool) bool {
+		fmt.Println(keys)
+		return true
+	}
+	fmt.Println(mcs)
+	done := NewSR(nkeys, printem)
+*/
+ 	done := NewSR(nkeys, mcs.keystates)
 	<-done
 
 }
@@ -147,18 +181,6 @@ loop:
 
 func main() {
 	flag.Parse()
-	if *iphod != "" {
-		if tree, err := typefaster.Maketree(*iphod); err != nil {
-			log.Println("problem reading iphod")
-			return
-		} else {
-			fmt.Println("-=-=-=-=-=-=-=-=--=-")
-			tree.Print(tree.Root, "")
-			fmt.Println("-=-=-=-=-=-=-=-=--=-")
-			a, b, c := tree.Lookup(tree.Root, "abstention")
-			fmt.Println("is abstention found?", a, b, c)
-		}
-	}
 	pi_shiftreg_interact()
 	return
 

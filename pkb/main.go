@@ -49,24 +49,7 @@ func main() {
 		}
 		return
 	}
-/*
-		if err := typefaster.Readiphod(*iphod); err != nil {
-			log.Println("problem reading iphod")
-			return
-		}
 
-	if *lookup != "" {
-		tree := typefaster.NewDiskTree(*lookup)
-		for _, w := range flag.Args() {
-			log.Println(w)
-			a, i := tree.Lookup(tree.root, w, 0)
-			log.Println("found", a, i)
-		}
-
-			log.Println(tree)
-		return
-	}
-*/
 	total := 0
 	utotal := 0
 	ucount := 0

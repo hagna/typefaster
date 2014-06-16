@@ -1,11 +1,11 @@
 package typefaster
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"strings"
 	"testing"
-	"bytes"
 )
 
 func TestInsertDup(t *testing.T) {
@@ -298,9 +298,9 @@ func TestDiskNodeValues(t *testing.T) {
 		t.Fatal("should have two values")
 	}
 	for i, z := range []string{"value", "v2"} {
-	if a.Value[i] != z {
-		t.Fatal("missing value", i, z, "got", a.Value[i])
-	}
+		if a.Value[i] != z {
+			t.Fatal("missing value", i, z, "got", a.Value[i])
+		}
 	}
 }
 
@@ -406,3 +406,31 @@ aardvark`
 	t.Log(b.String())
 }
 
+func TestLookupIter(t *testing.T) {
+	l := `abating
+abalone
+abc
+aback
+Ab
+Ab
+Aaron
+aardvark`
+	s := strings.Split(l, "\n")
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	tree := NewDiskTree(dirname)
+	for _, v := range s {
+		tree.Insert(v, "")
+	}
+	n, _ := tree.Lookup(tree.Root(), "a", 0)
+	c, _ := tree.Lookup(n, "ab", 0)
+	d, _ := tree.Lookup(c, "bc", 0)
+	t.Log("1 2 3", n, c, d)
+	if d == n {
+		t.Fatal("should have different nodes", d, n)
+	}
+	if d == c {
+		t.Fatal("should have different nodes", d, c)
+	}
+
+}

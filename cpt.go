@@ -7,8 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 	"runtime"
+	"strings"
 )
 
 /*
@@ -54,11 +54,11 @@ root/
 */
 
 /* a node in the compact prefix tree */
-type node struct {
+type Node struct {
 	Key      string
 	Value    []string
-	Children []*node
-	Parent   *node
+	Children []*Node
+	Parent   *Node
 	Edgename string
 }
 
@@ -74,17 +74,17 @@ type disknode struct {
 
 type Tree interface {
 	Insert(key, value string)
-	Lookup(parent *node, searchfor string) (c *node, p, m string)
-	Root() *node
+	Lookup(parent *Node, searchfor string) (c *Node, p, m string)
+	Root() *Node
 	String() string
 }
 
-func (t *DiskTree) Root() *node {
+func (t *DiskTree) Root() *Node {
 	return t.root.toMem()
 }
 
 type MemTree struct {
-	root *node
+	root *Node
 }
 
 type DiskTree struct {
@@ -113,14 +113,14 @@ func NewDiskTree(dirname string) *DiskTree {
 	res.root.Key = dirname + "asdfasdfjkl;ajsdl;fkjaskl;djasdf"
 	res.root.Hash = smash(res.root.Key)
 	res.path = dirname
-if _, err := os.Stat(dirname + "/" + res.root.Hash); os.IsNotExist(err) {
-	debug("no such file or directory: %s CREATING", dirname)
+	if _, err := os.Stat(dirname + "/" + res.root.Hash); os.IsNotExist(err) {
+		debug("no such file or directory: %s CREATING", dirname)
 
-	res.write(res.root)
-} else {
-	debug("dir exists already")
-	res.root = res.dnodeFromHash(res.root.Hash)
-}
+		res.write(res.root)
+	} else {
+		debug("dir exists already")
+		res.root = res.dnodeFromHash(res.root.Hash)
+	}
 	return res
 }
 
@@ -173,7 +173,7 @@ func debugf(format string, i ...interface{}) {
 		fname = fname[j+1:]
 		msg = fmt.Sprintf("%s:%d ", fname, lineno)
 	}
-	fmt.Printf(msg + format, i...)
+	fmt.Printf(msg+format, i...)
 }
 
 func (t *DiskTree) Insert(k, v string) {
@@ -182,7 +182,7 @@ func (t *DiskTree) Insert(k, v string) {
 	n, i := t.Lookup(root, k, 0)
 	commonprefix := k[:i]
 	debug("Insert", k, "and commonprefix is", commonprefix)
-	
+
 	debugf("Lookup returns node '%+v' mathced chars = '%v' match '%v'\n", n, i, k[:i])
 
 	debug("is it the root?")
@@ -197,7 +197,7 @@ func (t *DiskTree) Insert(k, v string) {
 
 	debug("is it a complete match?")
 	if k == n.Key {
-	dn := t.dnodeFromNode(n)
+		dn := t.dnodeFromNode(n)
 		dn.Value = append(dn.Value, v)
 		t.write(dn)
 
@@ -216,7 +216,7 @@ func (t *DiskTree) Insert(k, v string) {
 			dn := t.dnodeFromNode(n)
 			t.addChild(dn, e, k, []string{v})
 			debug("yes")
-			return 
+			return
 		}
 	}
 	debug("no")
@@ -235,8 +235,7 @@ func (t *DiskTree) Insert(k, v string) {
 
 	// whatever is left in n.Key after taking out the length of common prefix
 	lname := n.Key[len(commonprefix):]
-	rname := k[len(commonprefix):] 
-
+	rname := k[len(commonprefix):]
 
 	// index of edgename
 	ie := strings.LastIndex(n.Key, n.Edgename)
@@ -253,7 +252,7 @@ func (t *DiskTree) Insert(k, v string) {
 	leftnode.Children = mid.Children
 	children[string(leftnode.Edgename[0])] = leftnode.Hash
 
-	// update the middle node 
+	// update the middle node
 	mid.Edgename = midname
 	mid.Value = []string{}
 	mid.Key = commonprefix
@@ -270,7 +269,7 @@ func (t *DiskTree) Insert(k, v string) {
 		rightnode.Key = k
 		rightnode.Hash = smash(k)
 		children[string(rightnode.Edgename[0])] = rightnode.Hash
-		rightnode.Parent = mid.Hash	
+		rightnode.Parent = mid.Hash
 		t.write(rightnode)
 	}
 
@@ -279,14 +278,14 @@ func (t *DiskTree) Insert(k, v string) {
 	// also update mid's parent hash
 	midparent := t.dnodeFromHash(mid.Parent)
 	midparent.Children[string(midname[0])] = mid.Hash
-	
+
 	t.write(midparent)
 	t.write(mid)
 	t.write(leftnode)
 
 }
 
-func (n *disknode) toMem() *node {
+func (n *disknode) toMem() *Node {
 	if n == nil {
 		return nil
 	}
@@ -309,7 +308,7 @@ func (t *DiskTree) write(a *disknode) {
 	}
 }
 
-func (t *DiskTree) dnodeFromNode(n *node) *disknode {
+func (t *DiskTree) dnodeFromNode(n *Node) *disknode {
 	dn := t.dnodeFromHash(smash(n.Key))
 	return dn
 }
@@ -330,7 +329,7 @@ func (t *DiskTree) dnodeFromHash(s string) *disknode {
 }
 
 /* fetch the already existing child of node n from the disk that starts with c */
-func (t *DiskTree) fetchChild(n *node, c string) *node {
+func (t *DiskTree) fetchChild(n *Node, c string) *Node {
 	dn := t.dnodeFromNode(n)
 	v, ok := dn.Children[c]
 	if ok {
@@ -341,19 +340,19 @@ func (t *DiskTree) fetchChild(n *node, c string) *node {
 }
 
 /*
-	Lookup takes the node to start from, the string to search for, and a 
+	Lookup takes the node to start from, the string to search for, and a
 	count of how many chars are matched already.
 
-	It returns the node that matches most closely and the number of 
+	It returns the node that matches most closely and the number of
 	characters (starting from 0) that match.
 
 */
-func (t *DiskTree) Lookup(n *node, search string, i int) (*node, int) {
-	
+func (t *DiskTree) Lookup(n *Node, search string, i int) (*Node, int) {
+
 	if n == nil {
 		return nil, i
 	}
-dn := t.dnodeFromNode(n)
+	dn := t.dnodeFromNode(n)
 	debugf("Lookup(%+v, \"%s\", %d)\n", dn, search, i)
 	match := matchprefix(n.Edgename, search[i:])
 	i += len(match)
@@ -364,19 +363,19 @@ dn := t.dnodeFromNode(n)
 			return c, i
 		}
 	}
-	return n, i	
+	return n, i
 }
 
 // depth first print
 // too much converting between node and disknode
-func (t *DiskTree) Print(w io.Writer, n *node, prefix string) {
+func (t *DiskTree) Print(w io.Writer, n *Node, prefix string) {
 	dn := t.dnodeFromNode(n)
 	if len(dn.Children) == 0 {
 		fmt.Fprintf(w, "%s %s\n", Decode(prefix), n.Value)
 	} else {
 		for _, c := range dn.Children {
 			cnode := t.dnodeFromHash(c)
-			t.Print(w, cnode.toMem(), prefix + cnode.Edgename)
+			t.Print(w, cnode.toMem(), prefix+cnode.Edgename)
 		}
 		if len(n.Value) != 0 {
 			fmt.Fprintf(w, "%s %s\n", Decode(prefix), n.Value)
@@ -385,7 +384,7 @@ func (t *DiskTree) Print(w io.Writer, n *node, prefix string) {
 }
 
 // depth first search
-func (t *MemTree) Print(n *node, prefix string) {
+func (t *MemTree) Print(n *Node, prefix string) {
 	if len(n.Children) == 0 {
 		fmt.Println(prefix, n.Value)
 	} else {
@@ -399,7 +398,7 @@ func (t *MemTree) Print(n *node, prefix string) {
 	}
 }
 
-func (t *MemTree) Mkdir(n *node, prefix []string) {
+func (t *MemTree) Mkdir(n *Node, prefix []string) {
 	cb := func(key, value []string) {
 		res := []string{}
 		// skip first no encoded root
@@ -436,7 +435,7 @@ func (t *MemTree) Mkdir(n *node, prefix []string) {
 	t.mkdir(n, prefix, cb)
 }
 
-func (t *MemTree) mkdir(n *node, prefix []string, cb func(s, v []string)) {
+func (t *MemTree) mkdir(n *Node, prefix []string, cb func(s, v []string)) {
 	if len(n.Children) == 0 {
 		fmt.Println(prefix, n.Value)
 		cb(prefix, n.Value)
@@ -467,12 +466,12 @@ func wellFormed(part, match, edgename, k string) bool {
 	return res
 }
 
-func NewNode(value, edgename string, children []*node) *node {
+func NewNode(value, edgename string, children []*Node) *Node {
 	v := []string{}
 	if value != "" {
 		v = append(v, value)
 	}
-	res := &node{"", v, children, nil, edgename}
+	res := &Node{"", v, children, nil, edgename}
 	return res
 }
 
@@ -547,7 +546,7 @@ func matchprefix(a, b string) string {
 /*
 Lookup return the partial match of the current node and the match in the tree so far
 */
-func (t MemTree) Lookup(n *node, s string) (nres *node, part, match string) {
+func (t MemTree) Lookup(n *Node, s string) (nres *Node, part, match string) {
 	debugf("Lookup: NODE<%+v> for '%s'\n", *n, s)
 	if s == "" {
 		return n, "", ""
