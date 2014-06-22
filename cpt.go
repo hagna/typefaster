@@ -151,6 +151,7 @@ func (t *DiskTree) addChild(root *disknode, edgename, key string, value []string
 }
 
 func debug(i ...interface{}) {
+	return
 	var msg string
 	if _, fname, lineno, ok := runtime.Caller(1); !ok {
 		debug("couldn't get line number")
@@ -165,6 +166,7 @@ func debug(i ...interface{}) {
 }
 
 func debugf(format string, i ...interface{}) {
+	return
 	var msg string
 	if _, fname, lineno, ok := runtime.Caller(1); !ok {
 		debug("couldn't get line number")

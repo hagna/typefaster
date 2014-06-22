@@ -4,8 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hagna/typefaster"
+	"io"
+	"log"
+	"strings"
 	"os"
 	"os/signal"
+	"github.com/huin/goserial"
 )
 
 
@@ -24,14 +28,31 @@ type Mcs struct {
 	buf uint8
 	Tree *typefaster.DiskTree
 	Cnode *typefaster.Node
-	word []string
+	cword []string
 	iword int
+	serial io.ReadWriteCloser
 }
 
 func NewMcs() *Mcs {
 	m := new(Mcs)
 	m.Tree = typefaster.NewDiskTree(*treename)
 	m.Cnode = m.Tree.Root()
+	c := new(goserial.Config)
+	c.Name = "/dev/ttyAMA0"
+	c.Baud = 9600
+        s, err := goserial.OpenPort(c)
+        if err != nil {
+                log.Fatal(err)
+        }
+        
+        n, err := s.Write([]byte{97})
+        if err != nil {
+                log.Fatal(err)
+        } else {
+		fmt.Println("serial write got back", n)
+	}
+	m.serial = s
+ 
 	return m
 }
 
@@ -70,21 +91,28 @@ func (m *Mcs) keystates(keys []bool) bool {
 		if m.buf != 0 {
 			fmt.Printf("%x\n", m.buf)
 			
-			phon := decode(m.buf)
+			phon := decode(0x3f & m.buf)
 			ebuf := typefaster.Encode(phon)
-			m.Cnode, _ = m.Tree.Lookup(m.Cnode, m.Cnode.Key + ebuf, 0)
-			fmt.Println("found", m.Cnode)
+			m.cword = append(m.cword, ebuf)
+			fmt.Println(ebuf)
 			if isLast(m.buf) {
-				if len(m.Cnode.Value) == 0 {
-					fmt.Printf("Here are all the spellings with a common prefix of %s\n", m.Cnode.Key)
-					//m.Tree.Print(os.Stdout, m.Cnode, "")
+				we := strings.Join(m.cword, "")
+				a, i := m.Tree.Lookup(m.Tree.Root(), we, 0)
+				if a.Key != we {
+					fmt.Printf("closest match to \"%s\" was \"%s\"\n", typefaster.Decode(we), typefaster.Decode(a.Key[:i]))
+				} 
+				if len(a.Value) == 0 {
+					fmt.Println("Here are all the spellings with a common prefix.")
+					fmt.Println(a)
+					//m.Tree.Print(os.Stdout, a, "")
 				} else {
-					m.word = m.Cnode.Value
-					m.iword = 0
-					fmt.Println("values are", m.Cnode.Value)
+					m.serial.Write([]byte(a.Value[0]))
+					fmt.Println(a.Value)
 				}
-				m.Cnode = m.Tree.Root()
+
+				m.cword = []string{}
 			}
+
 			m.buf = 0
 			fmt.Println(phon)
 
