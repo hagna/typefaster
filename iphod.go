@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"github.com/jmhodges/levigo"
 )
 
 type iphodrecord struct {
@@ -59,6 +60,25 @@ func decode(p string) string {
 		res = append(res, decodemap[uint8(v)])
 	}
 	return strings.Join(res, ".")
+}
+
+// make leveldb
+func MakeLDB(iphod, root string) (*LDB, error) {
+	db := NewLDB(root)
+	wo := levigo.NewWriteOptions()
+	cb := func(word, phonemes string, nphones int) {
+
+		if err := db.Put(wo, []byte(phonemes), []byte(word)); err != nil {
+			fmt.Println(err)
+		}
+	
+	}
+	err := readiphod(iphod, cb)
+	wo.Close()
+	if err != nil {
+		return db, err
+	}
+	return db, nil
 }
 
 // make a compact prefix tree out of iphod for the keyboard to use
