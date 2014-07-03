@@ -26,7 +26,7 @@ func decode(a uint8) string {
 
 type Mcs struct {
 	buf uint8
-	Tree *typefaster.DiskTree
+	Tree *typefaster.LDB
 	Cnode *typefaster.Node
 	cword []string
 	iword int
@@ -35,8 +35,7 @@ type Mcs struct {
 
 func NewMcs() *Mcs {
 	m := new(Mcs)
-	m.Tree = typefaster.NewDiskTree(*treename)
-	m.Cnode = m.Tree.Root()
+	m.Tree = typefaster.NewLDB(*treename)
 	c := new(goserial.Config)
 	c.Name = "/dev/ttyAMA0"
 	c.Baud = 9600
@@ -97,7 +96,8 @@ func (m *Mcs) keystates(keys []bool) bool {
 			fmt.Println(ebuf)
 			if isLast(m.buf) {
 				we := strings.Join(m.cword, "")
-				a, i := m.Tree.Lookup(m.Tree.Root(), we, 0)
+				we = we[:len(we)-1] 
+				a, i := m.Tree.Lookup(we, 0)
 				if a.Key != we {
 					fmt.Printf("closest match to \"%s\" was \"%s\"\n", typefaster.Decode(we), typefaster.Decode(a.Key[:i]))
 				} 

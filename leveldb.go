@@ -21,3 +21,15 @@ func NewLDB(dbname string) *LDB {
 	n.DB = db
 	return n
 }
+
+func (l *LDB) Lookup(search string, i int) (*Node, int) {
+	ro := levigo.NewReadOptions()
+	n, err := l.Get(ro, []byte(search))
+	ro.Close()
+	if err != nil {
+		log.Println(err)
+		return nil, 0
+	}
+	v := string(n)
+	return NewNode(v, v, nil), len(v)
+}
