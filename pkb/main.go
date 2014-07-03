@@ -15,6 +15,7 @@ var genfromiphod = flag.String("genfromiphod", "", "generate the tree from the i
 var leveldbname = flag.String("leveldbname", "", "name of level db")
 var verbose = flag.Bool("v", false, "verbose?")
 var print = flag.Bool("print", false, "print?")
+var lookup = flag.Bool("lookup", false, "lookup")
 
 func main() {
 	flag.Parse()
@@ -44,25 +45,24 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-/*
-
-			if err := typefaster.Readiphod(*iphod); err != nil {
-				log.Println("problem reading iphod")
-				return
+	if *lookup {
+		tree := typefaster.NewDiskTree(*leveldbname)
+		for _, w := range flag.Args() {
+			we := typefaster.Encode(w)
+			a, i := tree.Lookup(tree.Root(), we, 0)
+			if a.Key != we {
+				fmt.Printf("closest match \"%s\"\n", typefaster.Decode(a.Key[:i]))
+			} 
+			if len(a.Value) == 0 {
+				fmt.Println("Here are all the spellings with a common prefix.")
+				tree.Print(os.Stdout, a, "")
+			} else {
+				fmt.Println(a.Value)
 			}
-
-		if *lookup != "" {
-			tree := typefaster.NewDiskTree(*lookup)
-			for _, w := range flag.Args() {
-				log.Println(w)
-				a, i := tree.Lookup(tree.root, w, 0)
-				log.Println("found", a, i)
-			}
-
-				log.Println(tree)
-			return
 		}
-	*/
+		return
+	}
+
 	total := 0
 	utotal := 0
 	ucount := 0

@@ -209,9 +209,9 @@ abstruse`
 
 func TestEncodeDecode(t *testing.T) {
 	s := "AA.AE.AH.AO.AW.AY.B.CH.D.DH.EH.ER.EY.F.G.HH.IH.IY.JH.K.L.M.N.NG.OW.OY.P.R.S.SH.T.TH.UH.UW.V.W.Y.Z.ZH"
-	if s != decode(encode(s)) {
-		t.Log("encoded == ", encode(s))
-		t.Log("decoded == ", decode(encode(s)))
+	if s != Decode(Encode(s)) {
+		t.Log("encoded == ", Encode(s))
+		t.Log("decoded == ", Decode(Encode(s)))
 		t.Fatal("failed to decode the encoded string")
 
 	}
@@ -404,4 +404,33 @@ aardvark`
 	b := bytes.NewBuffer([]byte{})
 	tree.Print(b, tree.root.toMem(), "")
 	t.Log(b.String())
+}
+
+func TestLookupIter(t *testing.T) {
+	l := `abating
+abalone
+abc
+aback
+Ab
+Ab
+Aaron
+aardvark`
+	s := strings.Split(l, "\n")
+	dirname := "root"
+	defer os.RemoveAll(dirname)
+	tree := NewDiskTree(dirname)
+	for _, v := range s {
+		tree.Insert(v, "")
+	}
+	n, _ := tree.Lookup(tree.Root(), "a", 0)
+	c, _ := tree.Lookup(n, "ab", 0)
+	d, _ := tree.Lookup(c, "bc", 0)
+	t.Log("1 2 3", n, c, d)
+	if d == n {
+		t.Fatal("should have different nodes", d, n)
+	}
+	if d == c {
+		t.Fatal("should have different nodes", d, c)
+	}
+
 }

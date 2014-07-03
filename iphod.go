@@ -45,7 +45,7 @@ in the cpt, and then decode when we want to display them.  Alternatively we
 could change cpt to use []string, but it's already working with string so why
 bother.
 */
-func encode(p string) string {
+func Encode(p string) string {
 	res := ""
 	for _, v := range strings.Split(p, ".") {
 		res += string(byte(encodemap[v]))
@@ -54,7 +54,7 @@ func encode(p string) string {
 
 }
 
-func decode(p string) string {
+func Decode(p string) string {
 	res := []string{}
 	for _, v := range p {
 		res = append(res, decodemap[uint8(v)])
@@ -86,7 +86,7 @@ func MakeLDB(iphod, root string) (*LDB, error) {
 func Maketree(iphod, root string) (*DiskTree, error) {
 	tree := NewDiskTree(root)
 	cb := func(word, phonemes string, nphones int) {
-		phonemes = encode(phonemes)
+		phonemes = Encode(phonemes)
 		tree.Insert(phonemes, word)
 	}
 	err := readiphod(iphod, cb)
