@@ -106,7 +106,7 @@ func (m *Mcs) keystates(keys []bool) bool {
 					fmt.Println(a)
 					//m.Tree.Print(os.Stdout, a, "")
 				} else {
-					m.serial.Write([]byte(a.Value[0]))
+					m.serial.Write(append([]byte(a.Value[0]), 0x20))
 					fmt.Println(a.Value)
 				}
 
