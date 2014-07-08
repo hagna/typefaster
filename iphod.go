@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"github.com/jmhodges/levigo"
 )
 
 type iphodrecord struct {
@@ -63,38 +62,14 @@ func Decode(p string) string {
 }
 
 // make leveldb
-func MakeLDB(iphod, root string) (*LDB, error) {
-	db := NewLDB(root)
-	wo := levigo.NewWriteOptions()
-	cb := func(word, phonemes string, nphones int) {
-
-		if err := db.Put(wo, []byte(phonemes), []byte(word)); err != nil {
-			fmt.Println(err)
-		}
-	
-	}
-	err := readiphod(iphod, cb)
-	wo.Close()
-	if err != nil {
-		return db, err
-	}
-	return db, nil
-}
-
-// make a compact prefix tree out of iphod for the keyboard to use
-// spelling words out of phonemes
-func Maketree(iphod, root string) (*DiskTree, error) {
-	tree := NewDiskTree(root)
-	cb := func(word, phonemes string, nphones int) {
-		phonemes = Encode(phonemes)
-		tree.Insert(phonemes, word)
-	}
+func MakeDB(iphod string, cb func(word, phonemes string, nphones int)) (error) {
 	err := readiphod(iphod, cb)
 	if err != nil {
-		return tree, err
+		return err
 	}
-	return tree, nil
+	return nil
 }
+
 
 // calls cb with each word phoneme nphones fields in the iphod
 func readiphod(iphod string, cb func(word, phonemes string, nphones int)) error {

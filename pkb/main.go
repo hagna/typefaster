@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hagna/typefaster"
+	"github.com/hagna/pt"
 	"github.com/jmhodges/levigo"
 	"log"
 	"os"
@@ -20,30 +21,27 @@ var lookup = flag.Bool("lookup", false, "lookup")
 func main() {
 	flag.Parse()
 	if *genfromiphod != "" {
-		var tree *typefaster.LDB
-		var err error
-		if tree, err = typefaster.MakeLDB(*genfromiphod, *leveldbname); err != nil {
+		db := pt.NewTree(*leveldbname)
+		defer db.Close()
+		cb := func(word, phonemes string, nphones int) {	
+			db.Insert(typefaster.Encode(phonemes), word)
+		}
+		if err := typefaster.MakeDB(*genfromiphod,  cb); err != nil {
 			log.Println("problem loading iphod")
 		}
-		fmt.Println(tree)
-		tree.Close()
+		fmt.Println(db)
 		return
 	}
 
 	
 	if *print {
-		db := typefaster.NewLDB(*leveldbname)
+		db := pt.NewTree(*leveldbname)
 		ro := levigo.NewReadOptions()
-		ro.SetFillCache(false)
-		it := db.NewIterator(ro)
-		defer it.Close()
-		it.SeekToFirst()
-		for it = it; it.Valid(); it.Next() {
-			fmt.Println(string(it.Key()), string(it.Value()))
+		cb := func(prefix string, val []string) {
+			fmt.Fprintf(os.Stdout, "%s %s\n", typefaster.Decode(prefix), val)
 		}
-		if err := it.GetError(); err != nil {
-			log.Fatal(err)
-		}
+		defer ro.Close()
+		db.Dfs(ro,  db.Root, "", cb)
 	}
 	if *lookup {
 		tree := typefaster.NewDiskTree(*leveldbname)
