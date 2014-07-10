@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hagna/typefaster"
+	"github.com/hagna/pt"
 	"io"
 	"log"
 	"strings"
@@ -26,8 +27,8 @@ func decode(a uint8) string {
 
 type Mcs struct {
 	buf uint8
-	Tree *typefaster.LDB
-	Cnode *typefaster.Node
+	Tree *pt.Tree
+	Cnode *pt.Node
 	cword []string
 	iword int
 	serial io.ReadWriteCloser
@@ -35,7 +36,7 @@ type Mcs struct {
 
 func NewMcs() *Mcs {
 	m := new(Mcs)
-	m.Tree = typefaster.NewLDB(*treename)
+	m.Tree = pt.NewTree(*treename)
 	c := new(goserial.Config)
 	c.Name = "/dev/ttyAMA0"
 	c.Baud = 9600
@@ -97,9 +98,9 @@ func (m *Mcs) keystates(keys []bool) bool {
 			if isLast(m.buf) {
 				we := strings.Join(m.cword, "")
 				we = we[:len(we)-1] 
-				a, i := m.Tree.Lookup(we, 0)
-				if a.Key != we {
-					fmt.Printf("closest match to \"%s\" was \"%s\"\n", typefaster.Decode(we), typefaster.Decode(a.Key[:i]))
+				a, i := m.Tree.Lookup(m.Tree.Root, we, 0)
+				if a.Name != we {
+					fmt.Printf("closest match to \"%s\" was \"%s\"\n", typefaster.Decode(we), typefaster.Decode(a.Name[:i]))
 				} 
 				if len(a.Value) == 0 {
 					fmt.Println("Here are all the spellings with a common prefix.")

@@ -44,12 +44,12 @@ func main() {
 		db.Dfs(ro,  db.Root, "", cb)
 	}
 	if *lookup {
-		tree := typefaster.NewDiskTree(*leveldbname)
+		tree := pt.NewTree(*leveldbname)
 		for _, w := range flag.Args() {
 			we := typefaster.Encode(w)
-			a, i := tree.Lookup(tree.Root(), we, 0)
-			if a.Key != we {
-				fmt.Printf("closest match \"%s\"\n", typefaster.Decode(a.Key[:i]))
+			a, i := tree.Lookup(tree.Root, we, 0)
+			if a.Name != we {
+				fmt.Printf("closest match \"%s\"\n", typefaster.Decode(a.Name[:i]))
 			} 
 			if len(a.Value) == 0 {
 				fmt.Println("Here are all the spellings with a common prefix.")
