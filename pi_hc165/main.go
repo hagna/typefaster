@@ -97,7 +97,7 @@ func (m *Mcs) keystates(keys []bool) bool {
 			fmt.Println(ebuf)
 			if isLast(m.buf) {
 				we := strings.Join(m.cword, "")
-				we = we[:len(we)-1] 
+				we = we[:len(we)] 
 				a, i := m.Tree.Lookup(m.Tree.Root, we, 0)
 				if a.Name != we {
 					fmt.Printf("closest match to \"%s\" was \"%s\"\n", typefaster.Decode(we), typefaster.Decode(a.Name[:i]))
