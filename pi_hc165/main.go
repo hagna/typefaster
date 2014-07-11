@@ -30,28 +30,30 @@ type Mcs struct {
 	Tree *pt.Tree
 	Cnode *pt.Node
 	cword []string
-	iword int
+	written int
+	i int
 	serial io.ReadWriteCloser
 }
 
 func NewMcs() *Mcs {
-	m := new(Mcs)
-	m.Tree = pt.NewTree(*treename)
-	c := new(goserial.Config)
-	c.Name = "/dev/ttyAMA0"
-	c.Baud = 9600
-        s, err := goserial.OpenPort(c)
-        if err != nil {
-                log.Fatal(err)
-        }
-        
-        n, err := s.Write([]byte{97})
-        if err != nil {
-                log.Fatal(err)
-        } else {
-		fmt.Println("serial write got back", n)
-	}
-	m.serial = s
+		m := new(Mcs)
+		m.Tree = pt.NewTree(*treename)
+		c := new(goserial.Config)
+		c.Name = "/dev/ttyAMA0"
+		c.Baud = 9600
+		s, err := goserial.OpenPort(c)
+		if err != nil {
+			log.Fatal(err)
+		}
+		
+		n, err := s.Write([]byte{97})
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			fmt.Println("serial write got back", n)
+		}
+		m.serial = s
+	m.Cnode = m.Tree.Root
  
 	return m
 }
@@ -81,6 +83,12 @@ func isLast(m uint8) bool {
 	return (m & 0xc0) != 0
 }
 
+func sendbs(w io.Writer, n int) {
+	for j := 0; j < n; j++ {
+		fmt.Fprintf(w, "\b")
+	}
+}
+
 /* Decode strokes this ought to run at some high rate in hz */
 func (m *Mcs) keystates(keys []bool) bool {
 	if keysup(keys) {
@@ -89,33 +97,39 @@ func (m *Mcs) keystates(keys []bool) bool {
 			return false //quit
 		}
 		if m.buf != 0 {
-			fmt.Printf("%x\n", m.buf)
-			
-			phon := decode(0x3f & m.buf)
-			ebuf := typefaster.Encode(phon)
-			m.cword = append(m.cword, ebuf)
-			fmt.Println(ebuf)
-			if isLast(m.buf) {
+			if v := 0x3f & m.buf; v != 0 {
+				phon := decode(v)
+				ebuf := typefaster.Encode(phon)
+				m.cword = append(m.cword, ebuf)
 				we := strings.Join(m.cword, "")
-				we = we[:len(we)] 
-				a, i := m.Tree.Lookup(m.Tree.Root, we, 0)
-				if a.Name != we {
-					fmt.Printf("closest match to \"%s\" was \"%s\"\n", typefaster.Decode(we), typefaster.Decode(a.Name[:i]))
+				m.Cnode, m.i = m.Tree.Lookup(m.Cnode, we, m.i)
+				fmt.Fprintf(m.serial, phon)
+				fmt.Printf(phon)
+				m.written += len(phon)
+			}
+			if isLast(m.buf) {
+				sendbs(m.serial, m.written)
+				a := m.Cnode
+				we := strings.Join(m.cword, "")
+				if a.Name == we && len(a.Value) != 0 {
+					fmt.Printf("closest match to \"%s\" was \"%s\"\n", typefaster.Decode(we), typefaster.Decode(a.Name[:m.i]))
 				} 
 				if len(a.Value) == 0 {
 					fmt.Println("Here are all the spellings with a common prefix.")
 					fmt.Println(a)
 					//m.Tree.Print(os.Stdout, a, "")
 				} else {
-					m.serial.Write(append([]byte(a.Value[0]), 0x20))
-					fmt.Println(a.Value)
+					//m.serial.Write(append([]byte(a.Value[0]), 0x20))
+					fmt.Fprintf(m.serial, "%s ", a.Value[0])
 				}
 
+				m.i = 0
+				m.Cnode = m.Tree.Root
 				m.cword = []string{}
+				m.written = 0
 			}
 
 			m.buf = 0
-			fmt.Println(phon)
 
 		}
 	} else {
